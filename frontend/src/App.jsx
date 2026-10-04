@@ -18,6 +18,7 @@ import { useHeliosStore } from './store/useHeliosStore';
 
 function App() {
   const [appReady, setAppReady] = useState(false);
+  const [gpuChecked, setGpuChecked] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadMessage, setLoadMessage] = useState('Initializing solar engine…');
 
@@ -47,6 +48,7 @@ function App() {
       }
       
       if (isMounted) setGpuAvailable(hasWebGPU);
+      if (isMounted) setGpuChecked(true);
 
       // Step 2: Calibrate and Prepare
       if (isMounted) {
@@ -79,6 +81,7 @@ function App() {
       </AnimatePresence>
 
       {/* ── Fallback ─────────────────────────────────────────────────── */}
+      {gpuChecked && !gpuAvailable && <WebGPUUnsupported />}
       {/* Handled internally by ShadowsView now */}
 
       {/* ── Header ────────────────────────────────────────────────────── */}

@@ -7,7 +7,7 @@ let CesiumModule = null;
 
 async function loadCesium() {
   if (CesiumModule) return CesiumModule;
-  window.CESIUM_BASE_URL = '/cesium/';
+  window.CESIUM_BASE_URL = `${import.meta.env.BASE_URL}cesium/`;
   CesiumModule = await import('cesium');
 
   // Only set Ion token if user has provided one
