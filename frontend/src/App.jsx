@@ -81,7 +81,7 @@ function App() {
       </AnimatePresence>
 
       {/* ── Fallback ─────────────────────────────────────────────────── */}
-      {gpuChecked && !gpuAvailable && <WebGPUUnsupported />}
+      {gpuChecked && !gpuAvailable && viewMode === 'shadows' && <WebGPUUnsupported />}
       {/* Handled internally by ShadowsView now */}
 
       {/* ── Header ────────────────────────────────────────────────────── */}
