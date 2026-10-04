@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer glow ring -->
+  <circle cx="32" cy="32" r="30" stroke="#FDB813" stroke-width="1" stroke-opacity="0.3"/>
+  <!-- Sun body -->
+  <circle cx="32" cy="32" r="14" fill="#FDB813"/>
+  <!-- Corona rays -->
+  <circle cx="32" cy="32" r="22" stroke="#F5A623" stroke-width="0.8" stroke-opacity="0.5" stroke-dasharray="3 5"/>
+  <!-- Inner core highlight -->
+  <circle cx="27" cy="27" r="5" fill="#FFF176" opacity="0.4"/>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "name": "heliosgpu-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "start": "npm run start --workspaces --if-present",
+    "build": "npm run build --workspace=frontend",
+    "install:all": "npm install"
+  }
+}
