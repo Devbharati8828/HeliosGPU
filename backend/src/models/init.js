@@ -6,12 +6,13 @@ async function initDB() {
   try {
     // 1. Connect without database selected to create it if it doesn't exist
     connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || ''
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD
     });
     
-    const dbName = process.env.DB_NAME || 'helioscope';
+    const dbName = process.env.DB_NAME;
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
     await connection.query(`USE \`${dbName}\`;`);
     
