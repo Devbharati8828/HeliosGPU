@@ -23,7 +23,7 @@ app.use(helmet({
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://helios-gpu.vercel.app"
+    "https://helios-gpu-three.vercel.app"
   ],
   credentials: true
 }));
