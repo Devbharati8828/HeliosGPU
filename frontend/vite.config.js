@@ -38,12 +38,14 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../dist',
+    outDir: 'dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 6000,
     rollupOptions: {
       output: {
         manualChunks: {
-          'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
+          three: ['three', '@react-three/fiber', '@react-three/drei'],
+          cesium: ['cesium'],
           'solar-vendor': ['suncalc', 'astronomy-engine'],
           'motion-vendor': ['framer-motion'],
           'ui-vendor': ['gsap', 'recharts', 'lucide-react', 'cmdk', 'zustand'],
