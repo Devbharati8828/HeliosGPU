@@ -20,7 +20,13 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving DEM files cross-origin
 }));
-app.use(cors()); // Allow all origins for MVP
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://helios-gpu.vercel.app"
+  ],
+  credentials: true
+}));
 
 // 2. Parsers
 app.use(express.json());
