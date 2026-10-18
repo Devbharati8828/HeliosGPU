@@ -121,6 +121,7 @@ export default function CesiumView() {
       // Step 4: Allow high-quality shadows (will be toggled per mode)
       viewer.shadowMap.maximumDistance = 10000;
       viewer.shadowMap.softShadows = true;
+      viewer.shadowMap.darkness = 0.3; // Soft, natural shadows that preserve ground visibility
       // Enable shadows on the globe surface
       viewer.scene.globe.receiveShadows = true;
       viewer.scene.globe.castShadows = true;

@@ -62,8 +62,8 @@ export default function Sun() {
         shadow-bias={-0.0004}
       />
 
-      {/* Soft fill from sky */}
-      <ambientLight intensity={0.1} color="#3a4a6a" />
+      {/* Soft fill from sky to soften shadows */}
+      <ambientLight intensity={0.35} color="#4a5e82" />
     </group>
   );
 }

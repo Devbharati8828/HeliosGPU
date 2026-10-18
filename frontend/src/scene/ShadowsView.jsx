@@ -19,7 +19,12 @@ function multiplyMatrices(a, b) {
 function perspectiveMatrix(fovRadians, aspect, near, far) {
   const f = 1 / Math.tan(fovRadians / 2);
   const range = 1 / (near - far);
-  return new Float32Array([f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) * range, -1, 0, 0, 2 * far * near * range, 0]);
+  return new Float32Array([
+    f / aspect, 0, 0, 0,
+    0, f, 0, 0,
+    0, 0, far * range, -1,
+    0, 0, near * far * range, 0,
+  ]);
 }
 
 function lookAtMatrix(eye, target) {
@@ -29,7 +34,11 @@ function lookAtMatrix(eye, target) {
   const right = [forward[2], 0, -forward[0]];
   const rightLength = Math.hypot(...right);
   right.forEach((_, index) => { right[index] /= rightLength; });
-  const up = [right[1] * forward[2] - right[2] * forward[1], right[2] * forward[0] - right[0] * forward[2], right[0] * forward[1] - right[1] * forward[0]];
+  const up = [
+    forward[1] * right[2] - forward[2] * right[1],
+    forward[2] * right[0] - forward[0] * right[2],
+    forward[0] * right[1] - forward[1] * right[0],
+  ];
   return new Float32Array([
     right[0], up[0], forward[0], 0, right[1], up[1], forward[1], 0, right[2], up[2], forward[2], 0,
     -right[0] * eye[0] - right[1] * eye[1] - right[2] * eye[2],
