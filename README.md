@@ -7,15 +7,23 @@ WebGPU-accelerated urban shadow and solar simulator that runs in the browser.
 ![HeliosGPU screenshot](add-screenshot-link)
 
 ## Features
-- GPU-accelerated shadow simulation using WebGPU
-- Realistic elevation color ramp and slope shading
-- [Add 1-2 more features you built]
+- Computes terrain shadows on the GPU with a WebGPU compute shader that ray-marches a 1024×1024 elevation grid for any location.
+- Streams, decodes and caches real-world elevation tiles off the main thread using a Web Worker and OPFS, so repeat visits skip the download.
+- Explores the Sun's path in four linked views (globe, 3D city map, sky, shadows) driven by one timezone-aware timeline.
 
 ## Tech Stack
-- **Frontend:** React, Vite, JavaScript
-- **Backend:** [Node.js / Express, if used]
-- **Database:** MySQL
-- **Deployment:** Vercel
+- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS 4, Zustand, Framer Motion
+- **3D and Maps:** WebGPU (WGSL), CesiumJS, Three.js, React Three Fiber
+- **Solar and Time:** SunCalc, Luxon, geotiff
+- **Backend:** Node.js, Express 5 (city search via Open-Meteo, saved locations)
+- **Database:** MySQL 8 (Docker Compose)
+
+## Deployment
+- **Frontend:** Vercel
+- **Backend:** Render
+
+## Data Sources
+AWS Terrarium elevation tiles, ArcGIS World Imagery, Cesium World Terrain, Open-Meteo geocoding
 
 ## Run Locally
 ```bash
