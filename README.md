@@ -1,32 +1,29 @@
-# React + TypeScript + Vite
+# HeliosGPU ☀️
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+WebGPU-accelerated urban shadow and solar simulator that runs in the browser.
 
-Currently, two official plugins are available:
+🔗 **Live demo:** https://helios-gpu.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![HeliosGPU screenshot](add-screenshot-link)
 
-## React Compiler
+## Features
+- GPU-accelerated shadow simulation using WebGPU
+- Realistic elevation color ramp and slope shading
+- [Add 1-2 more features you built]
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
+- **Frontend:** React, Vite, JavaScript
+- **Backend:** [Node.js / Express, if used]
+- **Database:** MySQL
+- **Deployment:** Vercel
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Run Locally
+```bash
+git clone https://github.com/Devbharati8828/HeliosGPU.git
+cd HeliosGPU/frontend
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Author
+Devneal Bharati | [LinkedIn](https://www.linkedin.com/in/devneal-bharati)
