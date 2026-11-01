@@ -55,10 +55,10 @@
     "@eslint/js": "^10.0.1",
     "@sqlite.org/sqlite-wasm": "^3.53.4-build1",
     "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^4.4.0",
+    "@vitejs/plugin-react": "^5.2.0",
     "@webgpu/types": "^0.1.74",
     "tailwindcss": "^4.0.0",
-    "vite": "^6.0.0",
+    "vite": "^7.3.6",
     "vite-plugin-static-copy": "^4.1.1",
     "wgpu-matrix": "^3.4.2"
   }
