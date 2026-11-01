@@ -6,6 +6,7 @@ const path = require('path');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const AppError = require('./utils/AppError');
+const healthController = require('./controllers/healthController');
 
 // Routers
 const locationsRouter = require('./routes/v1/locations');
@@ -48,10 +49,8 @@ app.use('/api/v1/terrain', terrainRouter);
 app.use('/api/v1/earth', earthRouter);
 app.use('/api/v1/analysis', analysisRouter);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, status: 'UP', timestamp: new Date() });
-});
+// Health check (includes DB ping)
+app.get('/api/health', healthController.getHealth);
 
 // 7. 404 Handler
 app.use((req, res, next) => {

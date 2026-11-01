@@ -85,7 +85,7 @@ function ManualUploadFallback({ reason, onFile }) {
           onChange={(e) => handleFiles(e.target.files)}
         />
       </label>
-      <p className="text-xs text-text-muted opacity-60">Max 50 MB · local files only</p>
+      <p className="text-xs text-text-muted opacity-60">Max 100 MB · local files only</p>
     </div>
   );
 }

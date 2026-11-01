@@ -13,6 +13,9 @@ async function initDB() {
     });
     
     const dbName = process.env.DB_NAME;
+    if (!dbName || !/^[A-Za-z0-9_]+$/.test(dbName)) {
+      throw new Error(`Invalid DB_NAME: "${dbName}". Only letters, digits and underscores are allowed.`);
+    }
     await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
     await connection.query(`USE \`${dbName}\`;`);
     
@@ -108,16 +111,6 @@ async function initDB() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );`,
 
-      `CREATE TABLE IF NOT EXISTS engine_runs (
-        id VARCHAR(36) PRIMARY KEY,
-        analysis_id VARCHAR(36),
-        client_agent TEXT,
-        compute_duration_ms INT,
-        success BOOLEAN DEFAULT TRUE,
-        error_message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (analysis_id) REFERENCES analysis_sessions(id) ON DELETE SET NULL
-      );`
     ];
 
     for (const q of queries) {
