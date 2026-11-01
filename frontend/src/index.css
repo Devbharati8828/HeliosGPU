@@ -452,3 +452,47 @@ html, body {
 }
 .rdp-day_selected { background: var(--color-sun-glow) !important; color: #000 !important; }
 .rdp-day:hover:not(.rdp-day_selected) { background: var(--color-helios-elevated) !important; }
+
+/* ── Cesium Attribution Credit Styling ───────────────────────────── */
+.cesium-widget-credits {
+  position: absolute !important;
+  bottom: 165px !important;
+  left: 24px !important;
+  right: auto !important;
+  z-index: 25 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+  line-height: 1.2 !important;
+  color: var(--color-text-secondary) !important;
+  background: rgba(7, 7, 13, 0.75) !important;
+  padding: 4px 10px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--color-line-subtle) !important;
+  backdrop-filter: blur(8px) !important;
+  pointer-events: auto !important;
+}
+
+.cesium-widget-credits a {
+  color: var(--color-text-secondary) !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease !important;
+}
+
+.cesium-widget-credits a:hover {
+  color: var(--color-sun-glow) !important;
+}
+
+.cesium-widget-credits .cesium-credit-logoContainer {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.cesium-widget-credits img {
+  height: 14px !important;
+  width: auto !important;
+  vertical-align: middle !important;
+  opacity: 0.8 !important;
+}

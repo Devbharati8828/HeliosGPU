@@ -110,8 +110,7 @@ export default function CesiumView() {
       viewer.scene.globe.enableLighting = true;
       viewer.scene.skyBox.show = true;
       viewer.scene.skyAtmosphere.show = true;
-      // Keep the Cesium ion attribution visible for hosted terrain and tiles.
-      viewer.cesiumWidget.creditContainer.style.display = 'none';
+      // Keep Cesium ion attribution visible and styled
       viewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
       // Improve photorealistic tile rendering quality
       viewer.scene.msaaSamples = 4;
