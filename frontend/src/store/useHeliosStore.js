@@ -106,3 +106,7 @@ export const useHeliosStore = create(subscribeWithSelector((set, get) => {
     _timeRef: { current: initialTimeOfDay },
   };
 }));
+
+if (typeof window !== 'undefined') {
+  window.useHeliosStore = useHeliosStore;
+}
