@@ -1,13 +1,16 @@
 import React, { useMemo, useEffect, useRef, useCallback } from 'react';
+import { DateTime } from 'luxon';
 import { useHeliosStore } from '../store/useHeliosStore';
 import { formatTime, formatDegrees } from '../lib/utils';
 import { useSpring, animated } from '@react-spring/web';
 
-function timeOfDayToDate(baseDate, fraction) {
-  const d = new Date(baseDate);
-  d.setHours(0, 0, 0, 0);
-  d.setMilliseconds(fraction * 86_400_000);
-  return d;
+export function timeOfDayToDate(baseDate, fraction, tz = 'UTC') {
+  const d = baseDate instanceof Date ? baseDate : new Date(baseDate);
+  const zone = tz || 'UTC';
+  const startOfDay = DateTime.fromJSDate(d).setZone(zone).startOf('day');
+  const nextDay = startOfDay.plus({ days: 1 });
+  const dayMs = nextDay.diff(startOfDay).as('milliseconds');
+  return startOfDay.plus({ milliseconds: fraction * dayMs }).toJSDate();
 }
 
 export default function SolarTimeline() {
@@ -41,9 +44,13 @@ export default function SolarTimeline() {
   // ── Marker positions ───────────────────────────────────────────────────
   const getTimePct = useCallback((time) => {
     if (!time || isNaN(new Date(time).getTime())) return null;
-    const t = new Date(time);
-    return ((t.getHours() * 3600 + t.getMinutes() * 60 + t.getSeconds()) / 86_400) * 100;
-  }, []);
+    const dt = DateTime.fromJSDate(new Date(time)).setZone(timezone || 'UTC');
+    const startOfDay = dt.startOf('day');
+    const nextDay = startOfDay.plus({ days: 1 });
+    const dayMs = nextDay.diff(startOfDay).as('milliseconds');
+    const elapsedMs = dt.diff(startOfDay).as('milliseconds');
+    return (elapsedMs / dayMs) * 100;
+  }, [timezone]);
 
   const sunrisePct  = getTimePct(sunTimes?.sunrise);
   const sunsetPct   = getTimePct(sunTimes?.sunset);
@@ -83,7 +90,7 @@ export default function SolarTimeline() {
   }, [setTimeOfDay, sunrisePct, sunsetPct]);
 
   // Current time display
-  const currentTime = formatTime(timeOfDayToDate(baseDate, timeOfDay), timezone);
+  const currentTime = formatTime(timeOfDayToDate(baseDate, timeOfDay, timezone), timezone);
 
   return (
     <div className="absolute left-0 right-0 bottom-0 z-30 flex flex-col items-center px-4 sm:px-12 pb-6 pt-12"
@@ -162,40 +169,44 @@ export default function SolarTimeline() {
               }}
             />
             
-            {/* Floating Tooltip */}
+            {/* Floating Tooltip: ONE time label, altitude shown separately */}
             <animated.div 
-              className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none"
+              className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none"
               style={{
-                top: y.to(val => `calc(${(val / 60) * 100}% - 3rem)`),
+                top: y.to(val => `calc(${(val / 60) * 100}% - 3.2rem)`),
               }}
             >
-              <div className="bg-helios-surface/90 backdrop-blur border border-line-active rounded px-3 py-1.5 shadow-xl whitespace-nowrap flex items-center space-x-3">
+              {/* Single primary time label */}
+              <div className="bg-helios-surface/95 backdrop-blur border border-line-active rounded px-3 py-1 shadow-xl whitespace-nowrap">
                 <span className="font-mono text-sm font-medium text-text-primary">{currentTime}</span>
-                <div className="w-[1px] h-3 bg-line-active" />
-                <span className="font-mono text-xs text-sun-glow">{formatDegrees(currentAlt)}</span>
               </div>
-              <div className="w-[1px] h-4 bg-line-active mt-1" />
+              {/* Altitude badge shown separately */}
+              <div className="mt-1 flex items-center gap-1 px-2 py-0.5 rounded bg-helios-void/90 border border-line-subtle shadow text-[10px] font-mono">
+                <span className="text-text-muted">ALT</span>
+                <span className="text-sun-glow font-medium">{formatDegrees(currentAlt)}</span>
+              </div>
+              <div className="w-[1px] h-3 bg-line-active mt-0.5" />
             </animated.div>
           </animated.div>
         </div>
 
-        {/* Event time labels */}
+        {/* Event time labels — all placed below the axis to avoid overlap */}
         {sunrisePct !== null && (
           <span className="absolute font-mono text-[9px] text-sun-dawn opacity-80"
             style={{ left: `${sunrisePct}%`, bottom: '-1.5rem', transform: 'translateX(-50%)' }}>
             {formatTime(sunTimes.sunrise, timezone)}
           </span>
         )}
+        {solarNoonPct !== null && (
+          <span className="absolute font-mono text-[9px] text-sun-glow opacity-80"
+            style={{ left: `${solarNoonPct}%`, bottom: '-1.5rem', transform: 'translateX(-50%)' }}>
+            {formatTime(sunTimes.solarNoon, timezone)}
+          </span>
+        )}
         {sunsetPct !== null && (
           <span className="absolute font-mono text-[9px] text-sun-horizon opacity-80"
             style={{ left: `${sunsetPct}%`, bottom: '-1.5rem', transform: 'translateX(-50%)' }}>
             {formatTime(sunTimes.sunset, timezone)}
-          </span>
-        )}
-        {solarNoonPct !== null && (
-          <span className="absolute font-mono text-[9px] text-sun-glow opacity-80"
-            style={{ left: `${solarNoonPct}%`, top: '-1.5rem', transform: 'translateX(-50%)' }}>
-            {formatTime(sunTimes.solarNoon, timezone)}
           </span>
         )}
 

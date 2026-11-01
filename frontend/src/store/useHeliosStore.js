@@ -6,8 +6,10 @@ import { DateTime } from 'luxon';
 const getInitialSolarState = (baseDate, lat, lng, timeOfDay, tz) => {
   // Get start of day in the target timezone
   const startOfDay = DateTime.fromJSDate(new Date(baseDate)).setZone(tz).startOf('day');
-  // Add fraction of the day
-  const targetDt = startOfDay.plus({ milliseconds: timeOfDay * 86400000 });
+  // Add fraction of the day accounting for DST
+  const nextDay = startOfDay.plus({ days: 1 });
+  const dayMs = nextDay.diff(startOfDay).as('milliseconds');
+  const targetDt = startOfDay.plus({ milliseconds: timeOfDay * dayMs });
   const d = targetDt.toJSDate();
 
   return {
