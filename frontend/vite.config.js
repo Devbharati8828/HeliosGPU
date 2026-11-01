@@ -46,15 +46,14 @@ export default defineConfig({
         manualChunks: {
           three: ['three', '@react-three/fiber', '@react-three/drei'],
           cesium: ['cesium'],
-          'solar-vendor': ['suncalc', 'astronomy-engine'],
+          'solar-vendor': ['suncalc'],
           'motion-vendor': ['framer-motion'],
-          'ui-vendor': ['gsap', 'recharts', 'lucide-react', 'cmdk', 'zustand'],
+          'ui-vendor': ['lucide-react', 'cmdk', 'zustand'],
         },
       },
     },
   },
   optimizeDeps: {
-    include: ['three', 'suncalc', 'astronomy-engine'],
-    exclude: ['@sqlite.org/sqlite-wasm'],
+    include: ['three', 'suncalc'],
   },
 });
