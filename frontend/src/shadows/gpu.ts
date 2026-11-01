@@ -29,17 +29,21 @@ export function getGpuDevice(): Promise<GPUDevice | null> {
 // Shadows-mode terrain mesh. The compute shadow shader (shadow.wgsl) is
 // untouched — it still writes 0/1 into shadowMask which we read here.
 const terrainWgsl = /* wgsl */ `
-// Camera uniform layout (24 x f32 = 96 bytes):
+// Camera uniform layout (28 x f32 = 112 bytes):
 //   [0..15]  viewProjection      mat4x4<f32>
-//   [16]     mapSize             f32
-//   [17]     gridScale           f32
-//   [18]     heightCenter        f32
-//   [19]     heightExaggeration  f32
-//   [20]     minHeight           f32   (metres — DEM-local minimum)
-//   [21]     maxHeight           f32   (metres — DEM-local maximum)
-//   [22,23]  _pad0, _pad1        f32 x 2
+//   [16..18] sunDirection        vec3<f32>
+//   [19]     sunAltitude         f32
+//   [20]     mapSize             f32
+//   [21]     gridScale           f32
+//   [22]     heightCenter        f32
+//   [23]     heightExaggeration  f32
+//   [24]     minHeight           f32   (metres — DEM-local minimum)
+//   [25]     maxHeight           f32   (metres — DEM-local maximum)
+//   [26,27]  _pad0, _pad1        f32 x 2
 struct Camera {
   viewProjection:     mat4x4<f32>,
+  sunDirection:       vec3<f32>,
+  sunAltitude:        f32,
   mapSize:            f32,
   gridScale:          f32,
   heightCenter:       f32,
@@ -128,30 +132,38 @@ fn elevationColor(e: f32) -> vec3<f32> {
 
 @fragment
 fn terrainFragment(input: VertexOut) -> @location(0) vec4<f32> {
-  // ── 1. Shadow mask from compute shader (unchanged) ─────────────────────────
+  // ── 1. Shadow mask from compute shader ─────────────────────────────
   let shadow = textureLoad(shadowMask, vec2<i32>(input.gridPosition), 0).r;
 
-  // ── 2. Elevation-based base colour ─────────────────────────────────────────
+  // ── 2. Elevation-based base colour ─────────────────────────────────
   let baseColor = elevationColor(input.elevNorm);
 
-  // ── 3. Slope shading — flat tops bright, steep walls darker ────────────────
+  // ── 3. Slope shading — flat tops bright, steep walls darker ────────
   let slopeFactor = clamp(input.normal.y * 0.55 + 0.45, 0.38, 1.0);
 
-  // ── 4. Sun-direction diffuse (same fixed sun vector as before) ─────────────
-  let diffuse = clamp(dot(input.normal, normalize(vec3<f32>(0.35, 0.8, -0.45))), 0.0, 1.0);
+  // ── 4. Sun-direction diffuse using real Sun direction ──────────────
+  let sunDir = normalize(camera.sunDirection);
+  let sunUp = camera.sunDirection.y;
+  let isDay = select(0.0, 1.0, sunUp > 0.0);
+  let diffuse = clamp(dot(input.normal, sunDir), 0.0, 1.0) * isDay;
 
-  // ── 5. Sky-ambient fill (same formula as before) ───────────────────────────
+  // ── 5. Sky-ambient fill ───────────────────────────────────────────
   let skyAmbient = clamp(input.normal.y * 0.35 + 0.65, 0.45, 1.0);
 
-  // ── 6. Lit surface colour ──────────────────────────────────────────────────
+  // ── 6. Night / twilight dimming ───────────────────────────────────
+  // When Sun altitude is below 0, terrain must look dark (no full brightness).
+  let nightFactor = clamp((sunUp + 0.08) / 0.08, 0.06, 1.0);
+
+  // ── 7. Lit surface colour ──────────────────────────────────────────
   let litStrength = 0.30 + 0.70 * diffuse;
   let litColor    = baseColor * slopeFactor * litStrength;
 
-  // ── 7. Shadow surface colour (sky-ambient only, never pitch-black) ─────────
+  // ── 8. Shadow surface colour (sky-ambient, drops to night) ─────────
   let shadowColor = baseColor * slopeFactor * skyAmbient * 0.38;
 
-  // ── 8. Blend lit vs. shadowed ──────────────────────────────────────────────
-  return vec4<f32>(mix(shadowColor, litColor, shadow), 1.0);
+  // ── 9. Blend lit vs. shadowed and apply night factor ──────────────
+  let surfaceColor = mix(shadowColor, litColor, shadow * isDay);
+  return vec4<f32>(surfaceColor * nightFactor, 1.0);
 }
 `;
 
@@ -167,6 +179,7 @@ export class ShadowGpuRenderer {
   private readonly computeBindGroup: GPUBindGroup;
   private readonly terrainBindGroup: GPUBindGroup;
   private dem: DemData | undefined;
+  private depthTexture: GPUTexture | null = null;
 
   constructor(device: GPUDevice, canvas: HTMLCanvasElement) {
     this.device = device;
@@ -177,8 +190,8 @@ export class ShadowGpuRenderer {
     this.elevationBuffer = device.createBuffer({ size: DEM_GRID_SIZE * DEM_GRID_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
     this.shadowTexture = device.createTexture({ size: [DEM_GRID_SIZE, DEM_GRID_SIZE], format: 'rgba8unorm', usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.TEXTURE_BINDING });
     this.computeParamsBuffer = device.createBuffer({ size: 48, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
-    // Expanded from 80 → 96 bytes: adds slots [20]=minHeight [21]=maxHeight [22,23]=padding
-    this.cameraBuffer = device.createBuffer({ size: 96, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+    // Expanded from 96 → 112 bytes (28 x f32): adds sunDirection [16..18] + sunAltitude [19]
+    this.cameraBuffer = device.createBuffer({ size: 112, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
     this.computePipeline = device.createComputePipeline({ layout: 'auto', compute: { module: device.createShaderModule({ code: shadowWgsl }), entryPoint: 'main' } });
     const terrainModule = device.createShaderModule({ code: terrainWgsl });
     this.terrainPipeline = device.createRenderPipeline({
@@ -206,27 +219,47 @@ export class ShadowGpuRenderer {
     this.device.queue.writeBuffer(this.elevationBuffer, 0, dem.data);
   }
 
-  render(sunDirection: [number, number, number], viewProjection: Float32Array, computeShadows = true) {
+  render(
+    sunDirection: [number, number, number],
+    viewProjection: Float32Array,
+    computeShadows = true,
+    onComputeDone?: (ms: number) => void
+  ) {
     if (!this.dem) return;
     const computeParams = new ArrayBuffer(48);
     new Float32Array(computeParams).set([...sunDirection, this.dem.gridScale]);
     new Uint32Array(computeParams)[4] = DEM_GRID_SIZE;
     this.device.queue.writeBuffer(this.computeParamsBuffer, 0, computeParams);
 
-    // Camera uniform: 24 floats = 96 bytes
-    const camera = new Float32Array(24);
-    camera.set(viewProjection);            // [0..15]  mat4x4
-    camera[16] = DEM_GRID_SIZE;            // [16]     mapSize
-    camera[17] = this.dem.gridScale;       // [17]     gridScale
-    camera[18] = (this.dem.minHeight + this.dem.maxHeight) * 0.5; // [18] heightCenter
-    camera[19] = Math.max(1.4, Math.min(4.5, (this.dem.maxHeight - this.dem.minHeight) / 950)); // [19] heightExaggeration
-    camera[20] = this.dem.minHeight;       // [20]     minHeight  ← NEW
-    camera[21] = this.dem.maxHeight;       // [21]     maxHeight  ← NEW
-    // [22], [23] = 0 (padding)
+    // Camera uniform: 28 floats = 112 bytes
+    const camera = new Float32Array(28);
+    camera.set(viewProjection, 0);                               // [0..15]
+    camera.set(sunDirection, 16);                                // [16..18] sunDirection
+    camera[19] = sunDirection[1];                                // [19] sunAltitude (y component)
+    camera[20] = DEM_GRID_SIZE;                                  // [20] mapSize
+    camera[21] = this.dem.gridScale;                             // [21] gridScale
+    camera[22] = (this.dem.minHeight + this.dem.maxHeight) * 0.5;// [22] heightCenter
+    camera[23] = Math.max(1.4, Math.min(4.5, (this.dem.maxHeight - this.dem.minHeight) / 950)); // [23]
+    camera[24] = this.dem.minHeight;                             // [24] minHeight
+    camera[25] = this.dem.maxHeight;                             // [25] maxHeight
+    // [26], [27] = 0 (padding)
     this.device.queue.writeBuffer(this.cameraBuffer, 0, camera);
 
     const colorTexture = this.context.getCurrentTexture();
-    const depthTexture = this.device.createTexture({ size: [colorTexture.width, colorTexture.height], format: 'depth24plus', usage: GPUTextureUsage.RENDER_ATTACHMENT });
+    // Reuse depth texture across frames; recreate only when dimensions change
+    if (
+      !this.depthTexture ||
+      this.depthTexture.width !== colorTexture.width ||
+      this.depthTexture.height !== colorTexture.height
+    ) {
+      this.depthTexture?.destroy();
+      this.depthTexture = this.device.createTexture({
+        size: [colorTexture.width, colorTexture.height],
+        format: 'depth24plus',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+      });
+    }
+
     const encoder = this.device.createCommandEncoder();
     if (computeShadows) {
       const compute = encoder.beginComputePass();
@@ -237,12 +270,29 @@ export class ShadowGpuRenderer {
     }
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: colorTexture.createView(), clearValue: { r: 0.018, g: 0.027, b: 0.047, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
-      depthStencilAttachment: { view: depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'discard' },
+      depthStencilAttachment: { view: this.depthTexture.createView(), depthClearValue: 1, depthLoadOp: 'clear', depthStoreOp: 'discard' },
     });
     pass.setPipeline(this.terrainPipeline);
     pass.setBindGroup(0, this.terrainBindGroup);
     pass.draw(6 * (DEM_GRID_SIZE - 1) * (DEM_GRID_SIZE - 1));
     pass.end();
+
+    const t0 = performance.now();
     this.device.queue.submit([encoder.finish()]);
+    if (computeShadows && onComputeDone) {
+      this.device.queue.onSubmittedWorkDone().then(() => {
+        const elapsed = performance.now() - t0;
+        onComputeDone(elapsed);
+      }).catch(() => {});
+    }
+  }
+
+  destroy() {
+    this.depthTexture?.destroy();
+    this.depthTexture = null;
+    this.shadowTexture.destroy();
+    this.elevationBuffer.destroy();
+    this.computeParamsBuffer.destroy();
+    this.cameraBuffer.destroy();
   }
 }

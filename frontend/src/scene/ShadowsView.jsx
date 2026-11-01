@@ -3,6 +3,7 @@ import { RotateCcw, Upload, AlertTriangle, Loader2 } from 'lucide-react';
 import { useHeliosStore } from '../store/useHeliosStore';
 import { getGpuDevice, ShadowGpuRenderer } from '../shadows/gpu';
 import { useDem } from '../shadows/useDem';
+import WebGPUUnsupported from '../components/WebGPUUnsupported';
 
 const radians = (degrees) => (degrees * Math.PI) / 180;
 
@@ -115,6 +116,8 @@ export default function ShadowsView() {
   const date = useHeliosStore((state) => state.date);
   const sunPosition = useHeliosStore((state) => state.sunPosition);
   const setDate = useHeliosStore((state) => state.setDate);
+  const computeTimeMs = useHeliosStore((state) => state.computeTimeMs);
+  const setComputeTime = useHeliosStore((state) => state.setComputeTime);
 
   const canvasRef = useRef(null);
   const pointerRef = useRef(null);
@@ -132,6 +135,7 @@ export default function ShadowsView() {
   useEffect(() => {
     if (viewMode !== 'shadows' || !canvasRef.current || gpuRenderer) return;
     let active = true;
+    let createdRenderer = null;
     (async () => {
       try {
         const device = await getGpuDevice();
@@ -139,14 +143,21 @@ export default function ShadowsView() {
           if (!device) setGpuError('WebGPU is not available in this browser.');
           return;
         }
-        const renderer = new ShadowGpuRenderer(device, canvasRef.current);
-        setGpuRenderer(renderer);
-        setGpuReady(true);
+        createdRenderer = new ShadowGpuRenderer(device, canvasRef.current);
+        if (active) {
+          setGpuRenderer(createdRenderer);
+          setGpuReady(true);
+        } else {
+          createdRenderer.destroy();
+        }
       } catch (err) {
         if (active) setGpuError(err.message || 'GPU initialization failed.');
       }
     })();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      if (createdRenderer) createdRenderer.destroy();
+    };
   }, [viewMode, gpuRenderer]);
 
   // ── Feed DEM into GPU when worker delivers ─────────────────────────────────
@@ -183,9 +194,14 @@ export default function ShadowsView() {
       perspectiveMatrix(radians(50), 1, extent * 0.015, extent * 8),
       lookAtMatrix(eye, [0, 0, 0])
     );
-    gpuRenderer.render(sunDirection, viewProjection, recomputeRef.current);
+    gpuRenderer.render(
+      sunDirection,
+      viewProjection,
+      recomputeRef.current,
+      (ms) => setComputeTime(ms)
+    );
     recomputeRef.current = false;
-  }, [gpuRenderer, activeDem, camera, sunDirection]);
+  }, [gpuRenderer, activeDem, camera, sunDirection, setComputeTime]);
 
   // ── Manual .tif upload handler ─────────────────────────────────────────────
   const handleManualFile = async (file) => {
@@ -235,6 +251,7 @@ export default function ShadowsView() {
   };
 
   if (viewMode !== 'shadows') return null;
+  if (gpuError) return <WebGPUUnsupported />;
   const day = getDayOfYear(date);
 
   // Status line shown in the panel
@@ -301,6 +318,11 @@ export default function ShadowsView() {
         </p>
         {cacheLabel && <p className="mt-0.5 text-xs text-text-muted">{cacheLabel}</p>}
         {activeDem && <p className="mt-2 text-xs text-text-muted">{activeDem.gridScale.toFixed(1)} m per sample</p>}
+        {computeTimeMs > 0 && (
+          <p className="mt-1 text-xs text-text-muted font-mono">
+            Compute: <span className="text-sun-glow">{computeTimeMs.toFixed(1)} ms</span>
+          </p>
+        )}
 
         <label className="mt-5 block text-xs text-text-muted" htmlFor="shadow-day">
           Day of year {day}

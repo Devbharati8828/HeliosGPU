@@ -80,10 +80,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* ── Fallback ─────────────────────────────────────────────────── */}
-      {gpuChecked && !gpuAvailable && viewMode === 'shadows' && <WebGPUUnsupported />}
-      {/* Handled internally by ShadowsView now */}
-
       {/* ── Header ────────────────────────────────────────────────────── */}
       <Header />
 
@@ -96,7 +92,7 @@ function App() {
         <Suspense fallback={null}>
           {(viewMode === 'globe' || viewMode === 'map3d') && <CesiumView />}
           {viewMode === 'sky' && <HeliosScene />}
-          {viewMode === 'shadows' && <ShadowsView />}
+          {viewMode === 'shadows' && (gpuChecked && !gpuAvailable ? <WebGPUUnsupported /> : <ShadowsView />)}
         </Suspense>
 
         {/* ── Floating UI ─────────────────────────────────────────────── */}
