@@ -2,7 +2,7 @@
 
 WebGPU-accelerated urban shadow and solar simulator that runs in the browser.
 
-🔗 **Live demo:** https://helios-gpu.vercel.app
+🔗 **Live demo:** helios-gpu-three.vercel.app
 
 ## Features
 - Computes terrain shadows on the GPU with a WebGPU compute shader that ray-marches a 1024×1024 elevation grid for any location.
