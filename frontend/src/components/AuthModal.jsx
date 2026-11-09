@@ -4,10 +4,10 @@ import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INPUT_CLS =
-  'w-full bg-helios-void/60 border border-line-subtle rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:border-line-active transition-colors';
+  'w-full bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-normal';
 
 const BTN_CLS =
-  'w-full py-2.5 rounded-lg text-sm font-medium tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'w-full py-2.5 rounded-lg text-sm font-medium tracking-wide transition-colors flex items-center justify-center leading-none disabled:opacity-50 disabled:cursor-not-allowed';
 
 function validate(tab, fields) {
   if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
@@ -25,9 +25,9 @@ function validate(tab, fields) {
   return null;
 }
 
-export default function AuthModal({ onClose }) {
-  const [tab, setTab]           = useState('login');
-  const [fields, setFields]     = useState({ email: '', password: '', name: '' });
+export default function AuthModal({ onClose, initialTab = 'login' }) {
+  const [tab, setTab]               = useState(initialTab);
+  const [fields, setFields]         = useState({ email: '', password: '', name: '' });
   const [fieldError, setFieldError] = useState(null);
 
   const { login, register, status, errorMsg, clearError } = useAuthStore();
@@ -77,7 +77,7 @@ export default function AuthModal({ onClose }) {
           {/* Close */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors"
+            className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
@@ -94,7 +94,7 @@ export default function AuthModal({ onClose }) {
               <button
                 key={t}
                 onClick={() => { setTab(t); setFieldError(null); clearError(); }}
-                className={`flex-1 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full transition-colors ${
+                className={`flex-1 py-2 text-xs font-medium uppercase tracking-wider rounded-full transition-colors flex items-center justify-center text-center leading-none cursor-pointer ${
                   tab === t
                     ? 'bg-text-primary text-helios-void'
                     : 'text-text-secondary hover:text-text-primary'
@@ -105,12 +105,12 @@ export default function AuthModal({ onClose }) {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             {tab === 'register' && (
-              <div className="relative">
-                <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <div className="relative flex items-center">
+                <User size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
                 <input
-                  className={`${INPUT_CLS} pl-9`}
+                  className={INPUT_CLS}
                   type="text"
                   name="name"
                   placeholder="Display name"
@@ -121,23 +121,23 @@ export default function AuthModal({ onClose }) {
               </div>
             )}
 
-            <div className="relative">
-              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <div className="relative flex items-center">
+              <Mail size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
               <input
-                className={`${INPUT_CLS} pl-9`}
+                className={INPUT_CLS}
                 type="email"
                 name="email"
-                placeholder="Email"
+                placeholder="Email address"
                 value={fields.email}
                 onChange={handleChange}
                 autoComplete="email"
               />
             </div>
 
-            <div className="relative">
-              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <div className="relative flex items-center">
+              <Lock size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
               <input
-                className={`${INPUT_CLS} pl-9`}
+                className={INPUT_CLS}
                 type="password"
                 name="password"
                 placeholder="Password (min 8 chars)"
@@ -158,7 +158,7 @@ export default function AuthModal({ onClose }) {
             <button
               type="submit"
               disabled={isLoading}
-              className={`${BTN_CLS} bg-text-primary text-helios-void hover:bg-text-primary/90 mt-1`}
+              className={`${BTN_CLS} bg-text-primary text-helios-void hover:bg-text-primary/90 mt-2 cursor-pointer`}
             >
               {isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Create account'}
             </button>

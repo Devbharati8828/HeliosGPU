@@ -25,13 +25,13 @@ export default function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center space-x-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group"
+        className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
       >
-        <span className="w-5 h-5 rounded-full bg-sun-glow/80 flex items-center justify-center text-xs font-bold text-helios-void select-none">
+        <span className="w-5 h-5 rounded-full bg-sun-glow/90 flex items-center justify-center text-[10px] font-bold text-helios-void select-none shrink-0 leading-none">
           {displayName.charAt(0).toUpperCase()}
         </span>
-        <span className="text-sm font-medium tracking-wide max-w-[120px] truncate">{displayName}</span>
-        <ChevronDown size={12} className={`text-text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className="text-sm font-medium tracking-wide max-w-[120px] truncate leading-none">{displayName}</span>
+        <ChevronDown size={12} className={`text-text-muted transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
