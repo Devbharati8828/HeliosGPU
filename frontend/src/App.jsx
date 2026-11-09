@@ -7,7 +7,6 @@ import SolarTimeline from './components/SolarTimeline';
 import LocationSearch from './components/LocationSearch';
 import DateSelector from './components/DateSelector';
 import LoadingScreen from './components/LoadingScreen';
-import WebGPUUnsupported from './components/WebGPUUnsupported';
 
 // Renderers are lazy loaded
 const CesiumView = lazy(() => import('./globe/CesiumView'));
@@ -19,12 +18,10 @@ import { useAuthStore } from './store/useAuthStore';
 
 function App() {
   const [appReady, setAppReady] = useState(false);
-  const [gpuChecked, setGpuChecked] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadMessage, setLoadMessage] = useState('Initializing solar engine…');
 
   const setGpuAvailable = useHeliosStore((s) => s.setGpuAvailable);
-  const gpuAvailable = useHeliosStore((s) => s.gpuAvailable);
   const viewMode = useHeliosStore((s) => s.viewMode);
 
   // Load auth session once on app start (silently — won't block boot)
@@ -35,18 +32,17 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     
-    // Failsafe timeout: ensure appReady is ALWAYS set even if GPU or network stalls
+    // Failsafe timeout: ensure appReady is ALWAYS set even if network stalls
     const failsafeTimer = setTimeout(() => {
       if (isMounted) {
         setLoadProgress(100);
         setLoadMessage('Ready');
-        setGpuChecked(true);
         setAppReady(true);
       }
-    }, 2000);
+    }, 2500);
 
     const boot = async () => {
-      // Step 1: Check GPU capabilities with a strict 1.2s timeout
+      // Step 1: Detect GPU capabilities
       if (isMounted) {
         setLoadMessage('Detecting GPU capabilities…');
         setLoadProgress(30);
@@ -55,9 +51,7 @@ function App() {
       let hasWebGPU = false;
       try {
         if ('gpu' in navigator && typeof navigator.gpu.requestAdapter === 'function') {
-          const adapterPromise = navigator.gpu.requestAdapter();
-          const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
-          const adapter = await Promise.race([adapterPromise, timeoutPromise]);
+          const adapter = await navigator.gpu.requestAdapter().catch(() => null);
           if (adapter) hasWebGPU = true;
         }
       } catch (err) {
@@ -65,7 +59,6 @@ function App() {
       }
       
       if (isMounted) setGpuAvailable(hasWebGPU);
-      if (isMounted) setGpuChecked(true);
 
       // Step 2: Calibrate and Prepare
       if (isMounted) {
@@ -115,7 +108,7 @@ function App() {
         <Suspense fallback={null}>
           {(viewMode === 'globe' || viewMode === 'map3d') && <CesiumView />}
           {viewMode === 'sky' && <HeliosScene />}
-          {viewMode === 'shadows' && (gpuChecked && !gpuAvailable ? <WebGPUUnsupported /> : <ShadowsView />)}
+          {viewMode === 'shadows' && <ShadowsView />}
         </Suspense>
 
         {/* ── Floating UI ─────────────────────────────────────────────── */}
