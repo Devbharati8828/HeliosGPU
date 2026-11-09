@@ -15,6 +15,7 @@ const HeliosScene = lazy(() => import('./scene/HeliosScene'));
 const ShadowsView = lazy(() => import('./scene/ShadowsView')); // To be created
 
 import { useHeliosStore } from './store/useHeliosStore';
+import { useAuthStore } from './store/useAuthStore';
 
 function App() {
   const [appReady, setAppReady] = useState(false);
@@ -25,6 +26,10 @@ function App() {
   const setGpuAvailable = useHeliosStore((s) => s.setGpuAvailable);
   const gpuAvailable = useHeliosStore((s) => s.gpuAvailable);
   const viewMode = useHeliosStore((s) => s.viewMode);
+
+  // Load auth session once on app start (silently — won't block boot)
+  const loadMe = useAuthStore((s) => s.loadMe);
+  useEffect(() => { loadMe(); }, [loadMe]);
 
   // ── Boot sequence ─────────────────────────────────────────────────────────
   useEffect(() => {
