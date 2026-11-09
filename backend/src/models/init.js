@@ -23,6 +23,26 @@ async function initDB() {
 
     // 2. Create tables
     const queries = [
+      // --- Auth tables (created before locations so FK can reference them) ---
+      `CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(36) PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      );`,
+
+      `CREATE TABLE IF NOT EXISTS refresh_tokens (
+        id VARCHAR(36) PRIMARY KEY,
+        user_id VARCHAR(36) NOT NULL,
+        token_hash VARCHAR(255) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        revoked BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );`,
+
       `CREATE TABLE IF NOT EXISTS locations (
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
@@ -116,7 +136,26 @@ async function initDB() {
     for (const q of queries) {
       await connection.query(q);
     }
-    
+
+    // Idempotent: add user_id FK to locations only if the column doesn't exist yet
+    // MySQL 8 does not support ALTER TABLE ... ADD COLUMN IF NOT EXISTS, so we check
+    // INFORMATION_SCHEMA first.
+    const [colCheck] = await connection.query(
+      `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME   = 'locations'
+         AND COLUMN_NAME  = 'user_id'`
+    );
+    if (colCheck[0].cnt === 0) {
+      await connection.query(
+        `ALTER TABLE locations
+           ADD COLUMN user_id VARCHAR(36) NULL AFTER elevation,
+           ADD CONSTRAINT fk_locations_user
+             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
+      );
+      console.log("Added user_id FK to locations.");
+    }
+
     console.log("All tables ensured successfully.");
 
   } catch (error) {
