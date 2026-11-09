@@ -21,18 +21,18 @@ Copy `.env.example` to `.env` and fill in your values:
 cp .env.example .env
 ```
 
-| Variable              | Description                                             | Default                 |
-| --------------------- | ------------------------------------------------------- | ----------------------- |
-| `PORT`                | HTTP port the server listens on                         | `3000`                  |
-| `DB_HOST`             | MySQL host                                              | `localhost`             |
-| `DB_PORT`             | MySQL port                                              | `3306`                  |
-| `DB_USER`             | MySQL user                                              | —                       |
-| `DB_PASSWORD`         | MySQL password                                          | —                       |
-| `DB_NAME`             | Database name (letters/digits/\_ only)                  | `heliosgpu`             |
-| `JWT_ACCESS_SECRET`   | Secret for access tokens (min 32 chars in production)   | —                       |
-| `JWT_REFRESH_SECRET`  | Secret for refresh tokens (min 32 chars in production)  | —                       |
-| `COOKIE_DOMAIN`       | (Optional) Domain scope for auth cookies                | —                       |
-| `CLIENT_ORIGIN`       | Exact frontend origin for CORS and cookies              | `http://localhost:5173` |
+| Variable             | Description                                            | Default                 |
+| -------------------- | ------------------------------------------------------ | ----------------------- |
+| `PORT`               | HTTP port the server listens on                        | `3000`                  |
+| `DB_HOST`            | MySQL host                                             | `localhost`             |
+| `DB_PORT`            | MySQL port                                             | `3306`                  |
+| `DB_USER`            | MySQL user                                             | —                       |
+| `DB_PASSWORD`        | MySQL password                                         | —                       |
+| `DB_NAME`            | Database name (letters/digits/\_ only)                 | `heliosgpu`             |
+| `JWT_ACCESS_SECRET`  | Secret for access tokens (min 32 chars in production)  | —                       |
+| `JWT_REFRESH_SECRET` | Secret for refresh tokens (min 32 chars in production) | —                       |
+| `COOKIE_DOMAIN`      | (Optional) Domain scope for auth cookies               | —                       |
+| `CLIENT_ORIGIN`      | Exact frontend origin for CORS and cookies             | `http://localhost:5173` |
 
 ---
 
@@ -82,7 +82,7 @@ The server will:
 | `POST`   | `/api/v1/auth/refresh`                    | Rotates refresh token in httpOnly cookie                 |
 | `POST`   | `/api/v1/auth/logout`                     | Revokes refresh token in DB, clears cookies              |
 | `GET`    | `/api/v1/auth/me`                         | Returns `{ id, email, name }` for active session         |
-| `GET`    | `/api/v1/locations/search?q=`             | Search saved locations                                  |
+| `GET`    | `/api/v1/locations/search?q=`             | Search saved locations                                   |
 | `POST`   | `/api/v1/locations`                       | Save a location (links to user if logged in)             |
 | `GET`    | `/api/v1/locations/mine`                  | Get saved locations belonging to authenticated user      |
 | `DELETE` | `/api/v1/locations/:id`                   | Delete user's own location (or guest-created location)   |
