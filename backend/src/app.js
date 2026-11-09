@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const path = require('path');
+const env = require('./config/env');
 const errorHandler = require('./middleware/errorHandler');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const AppError = require('./utils/AppError');
@@ -14,24 +16,33 @@ const solarRouter = require('./routes/v1/solar');
 const terrainRouter = require('./routes/v1/terrain');
 const earthRouter = require('./routes/v1/earth');
 const analysisRouter = require('./routes/v1/analysis');
+const authRouter = require('./routes/v1/auth');
 
 const app = express();
+
+// Trust reverse proxy (e.g. for rate-limiting behind Vercel/Nginx)
+app.set('trust proxy', 1);
+
+// Build the allowed CORS origins list from env + a dev fallback
+const corsOrigins = [env.CLIENT_ORIGIN];
+// Keep existing hardcoded prod origin if CLIENT_ORIGIN hasn't been overridden
+if (!corsOrigins.includes('https://helios-gpu-three.vercel.app')) {
+  corsOrigins.push('https://helios-gpu-three.vercel.app');
+}
 
 // 1. Security Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving DEM files cross-origin
 }));
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://helios-gpu-three.vercel.app"
-  ],
-  credentials: true
+  origin: corsOrigins,
+  credentials: true,
 }));
 
 // 2. Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // 3. Logger
 app.use(morgan('dev'));
@@ -48,6 +59,7 @@ app.use('/api/v1/solar', solarRouter);
 app.use('/api/v1/terrain', terrainRouter);
 app.use('/api/v1/earth', earthRouter);
 app.use('/api/v1/analysis', analysisRouter);
+app.use('/api/v1/auth', authRouter);
 
 // Health check (includes DB ping)
 app.get('/api/health', healthController.getHealth);
