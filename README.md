@@ -21,6 +21,7 @@ Interactive, GPU-accelerated solar position and terrain shadow simulation for an
 - **Physics-Based Timeline Scrubber**: Interactive day timeline with sunrise, solar noon, sunset indicators, and timezone/DST-aware scrubbing.
 - **WebGPU Terrain Shadows**: Client-side GPU compute shader performing raymarching over digital elevation model (DEM) grids to produce terrain shadow masks.
 - **Elevation Color Ramp**: Procedural slope and elevation shading blending vegetation, rock strata, and alpine snow caps based on normalized terrain height.
+- **Optional Authentication & Saved Locations**: Email + password login with bcrypt (cost 12), JWT httpOnly cookies, rotating refresh tokens, and user-scoped saved locations. Unset `VITE_API_URL` to completely hide auth UI.
 - **Offline & Fallback Resilience**: Direct Open-Meteo geocoding fallback when backend is unavailable; manual GeoTIFF DEM file upload fallback when automated tile fetching is offline.
 - **Four Cohesive Viewports**: Seamless switching across Globe, 3D Map, Sky, and Shadows view modes with shared time and location state.
 
@@ -140,6 +141,7 @@ docker compose up -d
 - **Approximate Raymarch**: Shadows are generated via raymarching over a discretized elevation grid with stepping increments; results are visual approximations designed for interactive exploration.
 - **WebGPU Dependency**: Shadows mode requires browser WebGPU support. On browsers lacking WebGPU, Globe, 3D Map, and Sky modes remain fully functional, while Shadows mode displays a fallback notice.
 - **Backend Optional**: Location persistence and custom terrain upload rely on the optional Node.js/MySQL backend; core simulation features require no backend connection.
+- **Authentication Scope (v1)**: Email verification, password reset, OAuth social logins, and refresh token rotation across multiple concurrent devices are out of scope for v1. Zero tokens are stored in `localStorage`. Cross-domain production hosting requires `SameSite=None; Secure`.
 
 ---
 
