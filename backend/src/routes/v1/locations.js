@@ -1,13 +1,23 @@
+'use strict';
 const express = require('express');
 const router = express.Router();
 const locationController = require('../../controllers/locationController');
+const requireAuth  = require('../../middleware/requireAuth');
+const optionalAuth = require('../../middleware/optionalAuth');
 
 // Define routes
 router.get('/search', locationController.search);
-// router.get('/reverse', locationController.reverseGeocode); // Optional implementation later
-router.post('/', locationController.createLocation);
+
+// GET /mine — authenticated user's locations (must come before /:id)
+router.get('/mine', requireAuth, locationController.getMyLocations);
+
+// POST / — save a location; optionalAuth links it to the user if logged in
+router.post('/', optionalAuth, locationController.createLocation);
+
 router.get('/', locationController.getLocations);
 router.get('/:id', locationController.getLocationById);
-router.delete('/:id', locationController.deleteLocation);
+
+// DELETE /:id — optionalAuth so we can scope by user_id appropriately
+router.delete('/:id', optionalAuth, locationController.deleteLocation);
 
 module.exports = router;
