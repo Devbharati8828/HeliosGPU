@@ -7,8 +7,8 @@ import { cn } from '../lib/utils';
 import AuthModal from './AuthModal';
 import UserMenu from './UserMenu';
 
-// Auth UI is only shown when VITE_API_URL is configured
-const API_ENABLED = Boolean(import.meta.env.VITE_API_URL);
+// Auth UI is enabled if VITE_API_URL is set, or automatically in local development
+const API_ENABLED = Boolean(import.meta.env.VITE_API_URL || import.meta.env.DEV);
 
 export default function Header() {
   const setSearchOpen = useHeliosStore((state) => state.setSearchOpen);
@@ -88,17 +88,17 @@ export default function Header() {
             </span>
           </button>
 
-          {/* Auth UI — only rendered when VITE_API_URL is set */}
+          {/* Auth UI — rendered when VITE_API_URL is set or in dev */}
           {API_ENABLED && (
             status === 'authenticated' && user
               ? <UserMenu />
               : (
                 <button
                   onClick={() => setAuthOpen(true)}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
                 >
                   <UserRound size={14} className="text-text-secondary group-hover:text-text-primary transition-colors" />
-                  <span className="text-sm font-medium tracking-wide">Sign in</span>
+                  <span className="text-sm font-medium tracking-wide">Sign in / Sign up</span>
                 </button>
               )
           )}

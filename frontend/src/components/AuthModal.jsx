@@ -100,7 +100,7 @@ export default function AuthModal({ onClose }) {
                     : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
-                {t === 'login' ? 'Sign in' : 'Register'}
+                {t === 'login' ? 'Sign in' : 'Sign up'}
               </button>
             ))}
           </div>

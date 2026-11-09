@@ -21,8 +21,8 @@ export const useAuthStore = create((set, _get) => ({
    * On failure (401, network error) stays in guest mode silently.
    */
   loadMe: async () => {
-    // Only call backend if VITE_API_URL is configured
-    if (!import.meta.env.VITE_API_URL) {
+    // Only call backend if VITE_API_URL is configured or in local development
+    if (!import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
       set({ status: 'guest' });
       return;
     }
