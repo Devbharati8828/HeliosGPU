@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { X, Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INPUT_CLS =
-  'w-full bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-normal';
+  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-normal';
 
 const BTN_CLS =
-  'w-full py-2.5 rounded-lg text-sm font-medium tracking-wide transition-colors flex items-center justify-center leading-none disabled:opacity-50 disabled:cursor-not-allowed';
+  'w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-all flex items-center justify-center gap-2 leading-none disabled:opacity-50 disabled:cursor-not-allowed shadow-md';
 
 function validate(tab, fields) {
   if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
@@ -89,26 +89,40 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
           </p>
 
           {/* Tabs */}
-          <div className="flex p-1 mb-5 rounded-full bg-helios-void/60 border border-line-subtle">
-            {['login', 'register'].map((t) => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setFieldError(null); clearError(); }}
-                className={`flex-1 py-2 text-xs font-medium uppercase tracking-wider rounded-full transition-colors flex items-center justify-center text-center leading-none cursor-pointer ${
-                  tab === t
-                    ? 'bg-text-primary text-helios-void'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                {t === 'login' ? 'Sign in' : 'Sign up'}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 p-1 mb-5 rounded-full bg-helios-void/60 border border-line-subtle gap-1">
+            <button
+              key="login"
+              type="button"
+              onClick={() => { setTab('login'); setFieldError(null); clearError(); }}
+              className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
+                tab === 'login'
+                  ? 'bg-text-primary text-helios-void shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <LogIn size={13} className="shrink-0" />
+              <span className="leading-none select-none">Sign in</span>
+            </button>
+
+            <button
+              key="register"
+              type="button"
+              onClick={() => { setTab('register'); setFieldError(null); clearError(); }}
+              className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
+                tab === 'register'
+                  ? 'bg-text-primary text-helios-void shadow-sm'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <UserPlus size={13} className="shrink-0" />
+              <span className="leading-none select-none">Sign up</span>
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {tab === 'register' && (
               <div className="relative flex items-center">
-                <User size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
+                <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
                 <input
                   className={INPUT_CLS}
                   type="text"
@@ -122,7 +136,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
             )}
 
             <div className="relative flex items-center">
-              <Mail size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
+              <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
               <input
                 className={INPUT_CLS}
                 type="email"
@@ -135,7 +149,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
             </div>
 
             <div className="relative flex items-center">
-              <Lock size={15} className="absolute left-3.5 text-text-muted pointer-events-none shrink-0" />
+              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
               <input
                 className={INPUT_CLS}
                 type="password"
@@ -151,7 +165,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
             {displayError && (
               <div className="flex items-center gap-2 text-red-400 text-xs py-1">
                 <AlertCircle size={12} className="shrink-0" />
-                <span>{displayError}</span>
+                <span className="leading-tight">{displayError}</span>
               </div>
             )}
 
@@ -160,7 +174,14 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               disabled={isLoading}
               className={`${BTN_CLS} bg-text-primary text-helios-void hover:bg-text-primary/90 mt-2 cursor-pointer`}
             >
-              {isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Create account'}
+              {isLoading ? (
+                <RefreshCw size={15} className="animate-spin shrink-0" />
+              ) : tab === 'login' ? (
+                <LogIn size={15} className="shrink-0" />
+              ) : (
+                <UserPlus size={15} className="shrink-0" />
+              )}
+              <span className="leading-none">{isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Sign up'}</span>
             </button>
           </form>
         </motion.div>
