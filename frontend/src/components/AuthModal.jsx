@@ -4,10 +4,10 @@ import { X, Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw } from 'lu
 import { useAuthStore } from '../store/useAuthStore';
 
 const INPUT_CLS =
-  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-normal';
+  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-none';
 
 const BTN_CLS =
-  'w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-all flex items-center justify-center gap-2 leading-none disabled:opacity-50 disabled:cursor-not-allowed shadow-md';
+  'w-full h-11 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 leading-none disabled:opacity-50 disabled:cursor-not-allowed shadow-md';
 
 function validate(tab, fields) {
   if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
@@ -84,7 +84,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
           </button>
 
           {/* Brand */}
-          <p className="font-serif text-lg tracking-widest text-text-primary text-center mb-5 uppercase">
+          <p className="font-serif text-lg tracking-[0.2em] pl-[0.2em] text-text-primary text-center mb-5 uppercase leading-none">
             Helios
           </p>
 
@@ -94,7 +94,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               key="login"
               type="button"
               onClick={() => { setTab('login'); setFieldError(null); clearError(); }}
-              className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
+              className={`h-9 px-3 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
                 tab === 'login'
                   ? 'bg-text-primary text-helios-void shadow-sm'
                   : 'text-text-secondary hover:text-text-primary'
@@ -108,7 +108,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               key="register"
               type="button"
               onClick={() => { setTab('register'); setFieldError(null); clearError(); }}
-              className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
+              className={`h-9 px-3 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer leading-none text-center ${
                 tab === 'register'
                   ? 'bg-text-primary text-helios-void shadow-sm'
                   : 'text-text-secondary hover:text-text-primary'
@@ -121,8 +121,10 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {tab === 'register' && (
-              <div className="relative flex items-center">
-                <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                  <User size={16} className="text-text-muted shrink-0" />
+                </div>
                 <input
                   className={INPUT_CLS}
                   type="text"
@@ -135,8 +137,10 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               </div>
             )}
 
-            <div className="relative flex items-center">
-              <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <Mail size={16} className="text-text-muted shrink-0" />
+              </div>
               <input
                 className={INPUT_CLS}
                 type="email"
@@ -148,8 +152,10 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               />
             </div>
 
-            <div className="relative flex items-center">
-              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <Lock size={16} className="text-text-muted shrink-0" />
+              </div>
               <input
                 className={INPUT_CLS}
                 type="password"
@@ -164,7 +170,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
             {/* Error */}
             {displayError && (
               <div className="flex items-center gap-2 text-red-400 text-xs py-1">
-                <AlertCircle size={12} className="shrink-0" />
+                <AlertCircle size={14} className="shrink-0" />
                 <span className="leading-tight">{displayError}</span>
               </div>
             )}
@@ -181,7 +187,7 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               ) : (
                 <UserPlus size={15} className="shrink-0" />
               )}
-              <span className="leading-none">{isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Sign up'}</span>
+              <span className="leading-none select-none">{isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Sign up'}</span>
             </button>
           </form>
         </motion.div>
@@ -189,4 +195,3 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
     </AnimatePresence>
   );
 }
-

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw, Sun } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 const INPUT_CLS =
-  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-normal';
+  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-none';
 
 function validate(tab, fields) {
   if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
@@ -47,7 +47,6 @@ export default function LoginPage() {
       } else {
         await register(fields.email, fields.password, fields.name.trim());
       }
-      // On success, App.jsx re-renders with the app
     } catch {
       // errorMsg is set in the store; displayed below
     }
@@ -78,47 +77,54 @@ export default function LoginPage() {
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
       >
-        {/* Brand */}
-        <p className="font-serif text-2xl tracking-[0.2em] text-text-primary text-center mb-1 uppercase">
-          Helios
-        </p>
-        <p className="text-xs text-text-muted text-center mb-7 tracking-wider">
-          Solar Intelligence Platform
-        </p>
+        {/* Brand header with Sun symbol */}
+        <div className="flex flex-col items-center justify-center mb-6">
+          <div className="w-9 h-9 rounded-full bg-sun-glow/10 border border-sun-glow/30 flex items-center justify-center mb-2 shadow-[0_0_12px_rgba(255,180,50,0.15)]">
+            <Sun size={18} className="text-sun-glow shrink-0" />
+          </div>
+          <h1 className="font-serif text-2xl text-text-primary text-center uppercase tracking-[0.2em] pl-[0.2em] leading-none">
+            Helios
+          </h1>
+          <p className="text-xs text-text-muted text-center tracking-wider mt-1.5 leading-none">
+            Solar Intelligence Platform
+          </p>
+        </div>
 
         {/* Tabs: Sign in / Sign up with aligned text and icons */}
         <div className="grid grid-cols-2 p-1 mb-6 rounded-full bg-helios-void/60 border border-line-subtle gap-1">
           <button
             type="button"
             onClick={() => switchTab('login')}
-            className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer leading-none text-center ${
+            className={`h-9 px-3 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer leading-none text-center select-none ${
               tab === 'login'
                 ? 'bg-text-primary text-helios-void shadow-sm'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            <LogIn size={13} className="shrink-0" />
+            <LogIn size={14} className="shrink-0" />
             <span className="leading-none select-none">Sign in</span>
           </button>
 
           <button
             type="button"
             onClick={() => switchTab('register')}
-            className={`h-9 px-3 text-xs font-semibold uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer leading-none text-center ${
+            className={`h-9 px-3 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer leading-none text-center select-none ${
               tab === 'register'
                 ? 'bg-text-primary text-helios-void shadow-sm'
                 : 'text-text-secondary hover:text-text-primary'
             }`}
           >
-            <UserPlus size={13} className="shrink-0" />
+            <UserPlus size={14} className="shrink-0" />
             <span className="leading-none select-none">Sign up</span>
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {tab === 'register' && (
-            <div className="relative flex items-center">
-              <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <User size={16} className="text-text-muted shrink-0" />
+              </div>
               <input
                 className={INPUT_CLS}
                 type="text"
@@ -132,8 +138,10 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="relative flex items-center">
-            <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+              <Mail size={16} className="text-text-muted shrink-0" />
+            </div>
             <input
               className={INPUT_CLS}
               type="email"
@@ -146,8 +154,10 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="relative flex items-center">
-            <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none shrink-0" />
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+              <Lock size={16} className="text-text-muted shrink-0" />
+            </div>
             <input
               className={INPUT_CLS}
               type="password"
@@ -162,7 +172,7 @@ export default function LoginPage() {
           {/* Error */}
           {displayError && (
             <div className="flex items-center gap-2 text-red-400 text-xs py-1">
-              <AlertCircle size={12} className="shrink-0" />
+              <AlertCircle size={14} className="shrink-0" />
               <span className="leading-tight">{displayError}</span>
             </div>
           )}
@@ -171,16 +181,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-11 rounded-lg text-sm font-semibold tracking-wide transition-all flex items-center justify-center gap-2 leading-none bg-text-primary text-helios-void hover:bg-text-primary/90 mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="w-full h-11 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 leading-none bg-text-primary text-helios-void hover:bg-text-primary/90 mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {isLoading ? (
-              <RefreshCw size={15} className="animate-spin shrink-0" />
+              <RefreshCw size={16} className="animate-spin shrink-0" />
             ) : tab === 'login' ? (
-              <LogIn size={15} className="shrink-0" />
+              <LogIn size={16} className="shrink-0" />
             ) : (
-              <UserPlus size={15} className="shrink-0" />
+              <UserPlus size={16} className="shrink-0" />
             )}
-            <span className="leading-none">{isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Sign up'}</span>
+            <span className="leading-none select-none">{isLoading ? 'Please wait…' : tab === 'login' ? 'Sign in' : 'Sign up'}</span>
           </button>
         </form>
       </motion.div>

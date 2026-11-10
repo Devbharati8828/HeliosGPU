@@ -34,10 +34,10 @@ export default function ServerErrorScreen() {
 
         <button
           onClick={loadMe}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-text-primary/10 hover:bg-text-primary/20 border border-text-primary/30 hover:border-text-primary/60 text-sm font-medium text-text-primary transition-colors cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-text-primary/10 hover:bg-text-primary/20 border border-text-primary/30 hover:border-text-primary/60 text-sm font-medium text-text-primary transition-colors cursor-pointer leading-none"
         >
-          <RefreshCw size={14} />
-          Retry
+          <RefreshCw size={14} className="shrink-0" />
+          <span className="leading-none select-none">Retry</span>
         </button>
       </motion.div>
     </div>
