@@ -13,6 +13,9 @@ struct ShadowParams {
 fn main(@builtin(global_invocation_id) id: vec3<u32>) {
   let size = params.mapSize;
   if (id.x >= size || id.y >= size) { return; }
+  // Sun is at or below the horizon — no cast shadows, ambient only.
+  // Write 0.0 (shadow=0) so the fragment shader uses shadowColor * nightFactor,
+  // which is kept bright enough by the raised nightFactor floor (0.30).
   if (params.sunDirection.y <= 0.0) {
     textureStore(shadowMask, vec2<i32>(id.xy), vec4<f32>(0.0, 0.0, 0.0, 1.0));
     return;

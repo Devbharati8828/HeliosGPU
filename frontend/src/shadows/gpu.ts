@@ -143,23 +143,26 @@ fn terrainFragment(input: VertexOut) -> @location(0) vec4<f32> {
 
   // ── 4. Sun-direction diffuse using real Sun direction ──────────────
   let sunDir = normalize(camera.sunDirection);
-  let sunUp = camera.sunDirection.y;
-  let isDay = select(0.0, 1.0, sunUp > 0.0);
+  let sunUp  = camera.sunDirection.y;
+  // isDay fades in over the first 8° above horizon to soften the transition
+  let isDay  = clamp(sunUp / 0.14, 0.0, 1.0);
   let diffuse = clamp(dot(input.normal, sunDir), 0.0, 1.0) * isDay;
 
   // ── 5. Sky-ambient fill ───────────────────────────────────────────
-  let skyAmbient = clamp(input.normal.y * 0.35 + 0.65, 0.45, 1.0);
+  // Gives every surface a minimum brightness so the mesh is never pitch-black.
+  let skyAmbient = clamp(input.normal.y * 0.35 + 0.65, 0.5, 1.0);
 
   // ── 6. Night / twilight dimming ───────────────────────────────────
-  // When Sun altitude is below 0, terrain must look dark (no full brightness).
-  let nightFactor = clamp((sunUp + 0.08) / 0.08, 0.06, 1.0);
+  // Clamp floor to 0.30 so terrain is always clearly visible even at midnight.
+  let nightFactor = clamp((sunUp + 0.15) / 0.15, 0.30, 1.0);
 
   // ── 7. Lit surface colour ──────────────────────────────────────────
-  let litStrength = 0.30 + 0.70 * diffuse;
+  let litStrength = 0.35 + 0.65 * diffuse;
   let litColor    = baseColor * slopeFactor * litStrength;
 
-  // ── 8. Shadow surface colour (sky-ambient, drops to night) ─────────
-  let shadowColor = baseColor * slopeFactor * skyAmbient * 0.38;
+  // ── 8. Shadow / ambient surface colour ────────────────────────────
+  // Ambient floor raised to 0.50 so shadowed faces read clearly.
+  let shadowColor = baseColor * slopeFactor * skyAmbient * 0.50;
 
   // ── 9. Blend lit vs. shadowed and apply night factor ──────────────
   let surfaceColor = mix(shadowColor, litColor, shadow * isDay);
