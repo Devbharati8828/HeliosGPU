@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
-const INPUT_CLS =
-  'w-full h-11 bg-helios-void/80 border border-line-subtle rounded-lg pl-11 pr-4 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-line-active transition-colors leading-none';
-
 const BTN_CLS =
   'w-full h-11 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 leading-none disabled:opacity-50 disabled:cursor-not-allowed shadow-md';
 
@@ -121,12 +118,12 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {tab === 'register' && (
-              <div className="relative flex items-center group">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
-                  <User size={17} className="shrink-0" />
-                </div>
+              <div className="auth-input-wrapper">
+                <span className="auth-input-icon">
+                  <User size={18} />
+                </span>
                 <input
-                  className={INPUT_CLS}
+                  className="auth-input-field"
                   type="text"
                   name="name"
                   placeholder="Display name"
@@ -137,12 +134,12 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               </div>
             )}
 
-            <div className="relative flex items-center group">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
-                <Mail size={17} className="shrink-0" />
-              </div>
+            <div className="auth-input-wrapper">
+              <span className="auth-input-icon">
+                <Mail size={18} />
+              </span>
               <input
-                className={INPUT_CLS}
+                className="auth-input-field"
                 type="email"
                 name="email"
                 placeholder="Email address"
@@ -152,12 +149,12 @@ export default function AuthModal({ onClose, initialTab = 'login' }) {
               />
             </div>
 
-            <div className="relative flex items-center group">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
-                <Lock size={17} className="shrink-0" />
-              </div>
+            <div className="auth-input-wrapper">
+              <span className="auth-input-icon">
+                <Lock size={18} />
+              </span>
               <input
-                className={INPUT_CLS}
+                className="auth-input-field"
                 type="password"
                 name="password"
                 placeholder="Password (min 8 chars)"
