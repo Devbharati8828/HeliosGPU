@@ -2,14 +2,14 @@ import { create } from 'zustand';
 import api, { ApiError } from '../services/apiClient';
 
 /**
- * useAuthStore — Zustand store for optional authentication.
+ * useAuthStore — Zustand store for mandatory authentication.
  *
  * Status values:
  *   'idle'          — initial state before loadMe is called
  *   'loading'       — loadMe / login / register in progress
  *   'authenticated' — user is logged in
- *   'guest'         — no active session (guest mode)
- *   'error'         — last action failed (see errorMsg)
+ *   'unauthenticated' — no active session; must log in
+ *   'server_error'  — backend unreachable; show retry screen
  */
 export const useAuthStore = create((set, _get) => ({
   user:      null,       // { id, email, name } or null
@@ -18,21 +18,21 @@ export const useAuthStore = create((set, _get) => ({
 
   /**
    * loadMe — called once on app start.
-   * On failure (401, network error) stays in guest mode silently.
+   * Sets status to 'authenticated', 'unauthenticated', or 'server_error'.
    */
   loadMe: async () => {
-    // Only call backend if VITE_API_URL is configured or in local development
-    if (!import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
-      set({ status: 'guest' });
-      return;
-    }
     set({ status: 'loading' });
     try {
       const res = await api.get('/api/v1/auth/me');
       set({ user: res.data, status: 'authenticated', errorMsg: null });
-    } catch {
-      // 401 or network error — stay in guest mode, no error overlay
-      set({ user: null, status: 'guest', errorMsg: null });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        // Not logged in — show login page
+        set({ user: null, status: 'unauthenticated', errorMsg: null });
+      } else {
+        // Network error or server down — show retry screen
+        set({ user: null, status: 'server_error', errorMsg: null });
+      }
     }
   },
 
@@ -47,7 +47,7 @@ export const useAuthStore = create((set, _get) => ({
       set({ user: res.data, status: 'authenticated', errorMsg: null });
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Login failed';
-      set({ status: 'error', errorMsg: msg });
+      set({ status: 'unauthenticated', errorMsg: msg });
       throw err;
     }
   },
@@ -63,7 +63,7 @@ export const useAuthStore = create((set, _get) => ({
       set({ user: res.data, status: 'authenticated', errorMsg: null });
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Registration failed';
-      set({ status: 'error', errorMsg: msg });
+      set({ status: 'unauthenticated', errorMsg: msg });
       throw err;
     }
   },
@@ -75,7 +75,7 @@ export const useAuthStore = create((set, _get) => ({
     try {
       await api.post('/api/v1/auth/logout', {});
     } catch { /* ignore network errors on logout */ }
-    set({ user: null, status: 'guest', errorMsg: null });
+    set({ user: null, status: 'unauthenticated', errorMsg: null });
   },
 
   clearError: () => set({ errorMsg: null }),

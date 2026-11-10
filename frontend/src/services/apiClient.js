@@ -1,10 +1,13 @@
 /**
  * Thin API client that always sends credentials (cookies) and
  * attempts a token refresh on 401 before giving up.
+ * On refresh failure, marks the auth store as unauthenticated.
  *
  * Usage: import api from '../services/apiClient';
  *        const data = await api.get('/api/v1/auth/me');
  */
+
+import { useAuthStore } from '../store/useAuthStore';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -49,7 +52,8 @@ async function request(path, options = {}, isRetry = false) {
       await refreshPromise;
       return request(path, options, true);
     } catch {
-      // Refresh failed — the caller will see a 401
+      // Refresh failed — force user back to login page
+      useAuthStore.setState({ user: null, status: 'unauthenticated', errorMsg: null });
     }
   }
 
@@ -73,4 +77,3 @@ const api = {
 
 export default api;
 export { ApiError };
-

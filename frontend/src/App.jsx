@@ -7,47 +7,53 @@ import SolarTimeline from './components/SolarTimeline';
 import LocationSearch from './components/LocationSearch';
 import DateSelector from './components/DateSelector';
 import LoadingScreen from './components/LoadingScreen';
+import LoginPage from './components/LoginPage';
+import ServerErrorScreen from './components/ServerErrorScreen';
 
-// Renderers are lazy loaded
+// Renderers are lazy loaded — not imported until user is authenticated
 const CesiumView = lazy(() => import('./globe/CesiumView'));
 const HeliosScene = lazy(() => import('./scene/HeliosScene'));
-const ShadowsView = lazy(() => import('./scene/ShadowsView')); // To be created
+const ShadowsView = lazy(() => import('./scene/ShadowsView'));
 
 import { useHeliosStore } from './store/useHeliosStore';
 import { useAuthStore } from './store/useAuthStore';
 
 function App() {
-  const [appReady, setAppReady] = useState(false);
+  const [gpuReady, setGpuReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [loadMessage, setLoadMessage] = useState('Initializing solar engine…');
 
   const setGpuAvailable = useHeliosStore((s) => s.setGpuAvailable);
   const viewMode = useHeliosStore((s) => s.viewMode);
 
-  // Load auth session once on app start (silently — won't block boot)
-  const loadMe = useAuthStore((s) => s.loadMe);
+  // Auth state
+  const { user, status: authStatus, loadMe } = useAuthStore();
+
+  // Load auth session once on app start
   useEffect(() => { loadMe(); }, [loadMe]);
 
-  // ── Boot sequence ─────────────────────────────────────────────────────────
+  // ── Boot sequence (GPU detection) ─────────────────────────────────────────
+  // Only run after auth is confirmed so we don't boot Cesium/WebGPU for unauthed users
   useEffect(() => {
+    if (authStatus !== 'authenticated') return;
+
     let isMounted = true;
-    
-    // Failsafe timeout: ensure appReady is ALWAYS set even if network stalls
+
+    // Failsafe: always finish within 2.5 s
     const failsafeTimer = setTimeout(() => {
       if (isMounted) {
         setLoadProgress(100);
         setLoadMessage('Ready');
-        setAppReady(true);
+        setGpuReady(true);
       }
     }, 2500);
 
     const boot = async () => {
-      // Step 1: Detect GPU capabilities
       if (isMounted) {
         setLoadMessage('Detecting GPU capabilities…');
         setLoadProgress(30);
       }
-      
+
       let hasWebGPU = false;
       try {
         if ('gpu' in navigator && typeof navigator.gpu.requestAdapter === 'function') {
@@ -57,10 +63,9 @@ function App() {
       } catch (err) {
         console.warn('WebGPU check failed:', err);
       }
-      
+
       if (isMounted) setGpuAvailable(hasWebGPU);
 
-      // Step 2: Calibrate and Prepare
       if (isMounted) {
         setLoadMessage('Calibrating solar algorithms…');
         setLoadProgress(70);
@@ -72,10 +77,10 @@ function App() {
         setLoadProgress(100);
       }
       await new Promise((r) => setTimeout(r, 150));
-      
+
       if (isMounted) {
         clearTimeout(failsafeTimer);
-        setAppReady(true);
+        setGpuReady(true);
       }
     };
 
@@ -84,14 +89,32 @@ function App() {
       isMounted = false;
       clearTimeout(failsafeTimer);
     };
-  }, [setGpuAvailable]);
+  }, [authStatus, setGpuAvailable]);
 
+  // ── Auth gate ─────────────────────────────────────────────────────────────
+
+  // While checking auth session, show loading screen
+  if (authStatus === 'idle' || authStatus === 'loading') {
+    return <LoadingScreen progress={loadProgress} message="Connecting to Helios…" />;
+  }
+
+  // Backend unreachable
+  if (authStatus === 'server_error') {
+    return <ServerErrorScreen />;
+  }
+
+  // Not logged in — show full-screen login/register page only
+  if (authStatus === 'unauthenticated' || !user) {
+    return <LoginPage />;
+  }
+
+  // ── Authenticated — render the full app ───────────────────────────────────
   return (
     <div className="w-full h-full bg-helios-bg text-text-primary flex flex-col relative overflow-hidden font-sans">
 
-      {/* ── Loading Screen ─────────────────────────────────────────────── */}
+      {/* ── Loading Screen (GPU boot after auth) ────────────────────────── */}
       <AnimatePresence>
-        {!appReady && (
+        {!gpuReady && (
           <LoadingScreen progress={loadProgress} message={loadMessage} />
         )}
       </AnimatePresence>

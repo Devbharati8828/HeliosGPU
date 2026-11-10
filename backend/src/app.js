@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const env = require('./config/env');
 const errorHandler = require('./middleware/errorHandler');
+const requireAuth = require('./middleware/requireAuth');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const AppError = require('./utils/AppError');
 const healthController = require('./controllers/healthController');
@@ -54,12 +55,12 @@ app.use('/api', apiLimiter);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 6. Routes
-app.use('/api/v1/locations', locationsRouter);
-app.use('/api/v1/solar', solarRouter);
-app.use('/api/v1/terrain', terrainRouter);
-app.use('/api/v1/earth', earthRouter);
-app.use('/api/v1/analysis', analysisRouter);
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/locations', requireAuth, locationsRouter);
+app.use('/api/v1/solar', requireAuth, solarRouter);
+app.use('/api/v1/terrain', requireAuth, terrainRouter);
+app.use('/api/v1/earth', requireAuth, earthRouter);
+app.use('/api/v1/analysis', requireAuth, analysisRouter);
 
 // Health check (includes DB ping)
 app.get('/api/health', healthController.getHealth);

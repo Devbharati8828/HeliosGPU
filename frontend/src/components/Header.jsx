@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Calendar, Globe, Map, Sunset, Mountain, User } from 'lucide-react';
+import { Search, Calendar, Globe, Map, Sunset, Mountain } from 'lucide-react';
 import { useHeliosStore } from '../store/useHeliosStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { cn } from '../lib/utils';
-import AuthModal from './AuthModal';
 import UserMenu from './UserMenu';
-
-// Auth UI is enabled if VITE_API_URL is set, or automatically in local development
-const API_ENABLED = Boolean(import.meta.env.VITE_API_URL || import.meta.env.DEV);
 
 export default function Header() {
   const setSearchOpen = useHeliosStore((state) => state.setSearchOpen);
@@ -16,13 +12,11 @@ export default function Header() {
   const locationName = useHeliosStore((state) => state.locationName);
   const date = useHeliosStore((state) => state.date);
   const timezone = useHeliosStore((state) => state.timezone);
-  
+
   const viewMode = useHeliosStore((state) => state.viewMode);
   const setViewMode = useHeliosStore((state) => state.setViewMode);
 
-  const { user, status } = useAuthStore();
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authTab, setAuthTab]   = useState('login');
+  const { user } = useAuthStore();
 
   const modes = [
     { id: 'globe', label: 'Globe', icon: Globe },
@@ -32,95 +26,65 @@ export default function Header() {
   ];
 
   return (
-    <>
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-4 pointer-events-none"
-      >
-        {/* Brand */}
-        <div className="flex items-center space-x-2 pointer-events-auto">
-          <span className="font-serif text-2xl tracking-[0.15em] font-medium text-text-primary uppercase" style={{ letterSpacing: '0.2em' }}>
-            Helios
+    <motion.header
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-4 pointer-events-none"
+    >
+      {/* Brand */}
+      <div className="flex items-center space-x-2 pointer-events-auto">
+        <span className="font-serif text-2xl tracking-[0.15em] font-medium text-text-primary uppercase" style={{ letterSpacing: '0.2em' }}>
+          Helios
+        </span>
+      </div>
+
+      {/* Mode Selector */}
+      <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto hidden md:flex items-center p-1 rounded-full bg-helios-void/80 border border-line-subtle backdrop-blur-md">
+        {modes.map((mode) => (
+          <button
+            key={mode.id}
+            onClick={() => setViewMode(mode.id)}
+            className={cn(
+              "relative px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full transition-colors flex items-center space-x-2",
+              viewMode === mode.id ? "text-helios-void" : "text-text-secondary hover:text-text-primary"
+            )}
+          >
+            {viewMode === mode.id && (
+              <motion.div
+                layoutId="mode-indicator"
+                className="absolute inset-0 bg-text-primary rounded-full"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <mode.icon size={14} className="relative z-10" />
+            <span className="relative z-10">{mode.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center space-x-3 pointer-events-auto">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
+        >
+          <Search size={14} className="text-text-secondary group-hover:text-text-primary transition-colors shrink-0" />
+          <span className="text-sm font-medium tracking-wide leading-none">{locationName}</span>
+        </button>
+
+        <button
+          onClick={() => setDatePickerOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
+        >
+          <Calendar size={14} className="text-text-secondary group-hover:text-sun-glow transition-colors shrink-0" />
+          <span className="text-sm font-medium tracking-wide leading-none">
+            {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: timezone })}
           </span>
-        </div>
+        </button>
 
-        {/* Mode Selector */}
-        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto hidden md:flex items-center p-1 rounded-full bg-helios-void/80 border border-line-subtle backdrop-blur-md">
-          {modes.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => setViewMode(mode.id)}
-              className={cn(
-                "relative px-4 py-1.5 text-xs font-medium uppercase tracking-wider rounded-full transition-colors flex items-center space-x-2",
-                viewMode === mode.id ? "text-helios-void" : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              {viewMode === mode.id && (
-                <motion.div
-                  layoutId="mode-indicator"
-                  className="absolute inset-0 bg-text-primary rounded-full"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <mode.icon size={14} className="relative z-10" />
-              <span className="relative z-10">{mode.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center space-x-3 pointer-events-auto">
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
-          >
-            <Search size={14} className="text-text-secondary group-hover:text-text-primary transition-colors shrink-0" />
-            <span className="text-sm font-medium tracking-wide leading-none">{locationName}</span>
-          </button>
-
-          <button
-            onClick={() => setDatePickerOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
-          >
-            <Calendar size={14} className="text-text-secondary group-hover:text-sun-glow transition-colors shrink-0" />
-            <span className="text-sm font-medium tracking-wide leading-none">
-              {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: timezone })}
-            </span>
-          </button>
-
-          {/* Auth UI — rendered when VITE_API_URL is set or in dev */}
-          {API_ENABLED && (
-            status === 'authenticated' && user
-              ? <UserMenu />
-              : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setAuthTab('login'); setAuthOpen(true); }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-helios-void/80 backdrop-blur-md border border-line-subtle hover:border-line-active transition-colors group cursor-pointer"
-                  >
-                    <User size={13} className="text-text-secondary group-hover:text-text-primary transition-colors shrink-0" />
-                    <span className="text-sm font-medium tracking-wide leading-none text-text-secondary group-hover:text-text-primary transition-colors">
-                      Sign in
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => { setAuthTab('register'); setAuthOpen(true); }}
-                    className="flex items-center px-3.5 py-2 rounded-full bg-text-primary/10 hover:bg-text-primary/20 border border-text-primary/30 hover:border-text-primary/60 transition-colors cursor-pointer"
-                  >
-                    <span className="text-sm font-medium tracking-wide leading-none text-text-primary">
-                      Sign up
-                    </span>
-                  </button>
-                </div>
-              )
-          )}
-        </div>
-      </motion.header>
-
-      {/* Auth modal */}
-      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} initialTab={authTab} />}
-    </>
+        {/* Always show UserMenu — user is always authenticated when Header renders */}
+        {user && <UserMenu />}
+      </div>
+    </motion.header>
   );
 }

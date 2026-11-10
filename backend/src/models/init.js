@@ -1,4 +1,6 @@
+const path = require('path');
 const mysql = require('mysql2/promise');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 require('dotenv').config();
 
 async function initDB() {
@@ -52,8 +54,10 @@ async function initDB() {
         region VARCHAR(255),
         timezone VARCHAR(100),
         elevation FLOAT,
+        user_id VARCHAR(36) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );`,
 
       `CREATE TABLE IF NOT EXISTS terrain_datasets (
@@ -137,23 +141,29 @@ async function initDB() {
       await connection.query(q);
     }
 
-    // Idempotent: add user_id FK to locations only if the column doesn't exist yet
-    // MySQL 8 does not support ALTER TABLE ... ADD COLUMN IF NOT EXISTS, so we check
-    // INFORMATION_SCHEMA first.
+    // Clean up any old guest rows without a user_id
+    await connection.query('DELETE FROM locations WHERE user_id IS NULL');
+
+    // Idempotent: ensure user_id column exists and is NOT NULL
     const [colCheck] = await connection.query(
-      `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+      `SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE()
          AND TABLE_NAME   = 'locations'
          AND COLUMN_NAME  = 'user_id'`
     );
-    if (colCheck[0].cnt === 0) {
+    if (colCheck.length === 0) {
       await connection.query(
         `ALTER TABLE locations
-           ADD COLUMN user_id VARCHAR(36) NULL AFTER elevation,
+           ADD COLUMN user_id VARCHAR(36) NOT NULL AFTER elevation,
            ADD CONSTRAINT fk_locations_user
              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE`
       );
-      console.log("Added user_id FK to locations.");
+      console.log("Added user_id NOT NULL FK to locations.");
+    } else if (colCheck[0].IS_NULLABLE === 'YES') {
+      await connection.query(
+        `ALTER TABLE locations MODIFY COLUMN user_id VARCHAR(36) NOT NULL`
+      );
+      console.log("Altered locations.user_id to NOT NULL.");
     }
 
     console.log("All tables ensured successfully.");

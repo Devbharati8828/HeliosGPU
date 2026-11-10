@@ -23,16 +23,7 @@ export default function LocationSearch() {
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        let rawResults;
-        try {
-          rawResults = await apiClient.locations.search(query);
-        } catch {
-          // Backend unavailable: fall back directly to Open-Meteo Geocoding
-          const fallbackUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10`;
-          const res = await fetch(fallbackUrl);
-          const data = await res.json();
-          rawResults = data.results || [];
-        }
+        const rawResults = await apiClient.locations.search(query);
 
         const formatted = (rawResults || []).map((r, i) => ({
           id: `loc-${i}`,
