@@ -4,7 +4,7 @@ import { Mail, Lock, User, AlertCircle, LogIn, UserPlus, RefreshCw, Sun } from '
 import { useAuthStore } from '../store/useAuthStore';
 
 const INPUT_CLS =
-  'w-full h-11 bg-helios-void/60 border border-line-subtle rounded-lg pl-10 pr-4 text-sm text-text-primary placeholder:text-text-muted/60 focus:outline-none focus:border-line-active transition-colors leading-none';
+  'w-full h-11 bg-helios-void/80 border border-line-subtle rounded-lg pl-11 pr-4 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-line-active transition-colors leading-none';
 
 function validate(tab, fields) {
   if (!fields.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
@@ -121,9 +121,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {tab === 'register' && (
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-                <User size={16} className="text-text-muted shrink-0" />
+            <div className="relative flex items-center group">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
+                <User size={17} className="shrink-0" />
               </div>
               <input
                 className={INPUT_CLS}
@@ -138,9 +138,9 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Mail size={16} className="text-text-muted shrink-0" />
+          <div className="relative flex items-center group">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
+              <Mail size={17} className="shrink-0" />
             </div>
             <input
               className={INPUT_CLS}
@@ -154,9 +154,9 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Lock size={16} className="text-text-muted shrink-0" />
+          <div className="relative flex items-center group">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 z-10 text-text-secondary group-focus-within:text-sun-glow group-hover:text-text-primary transition-colors">
+              <Lock size={17} className="shrink-0" />
             </div>
             <input
               className={INPUT_CLS}
