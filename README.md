@@ -21,8 +21,7 @@ Interactive, GPU-accelerated solar position and terrain shadow simulation for an
 - **Physics-Based Timeline Scrubber**: Interactive day timeline with sunrise, solar noon, sunset indicators, and timezone/DST-aware scrubbing.
 - **WebGPU Terrain Shadows**: Client-side GPU compute shader performing raymarching over digital elevation model (DEM) grids to produce terrain shadow masks.
 - **Elevation Color Ramp**: Procedural slope and elevation shading blending vegetation, rock strata, and alpine snow caps based on normalized terrain height.
-- **Optional Authentication & Saved Locations**: Email + password login with bcrypt (cost 12), JWT httpOnly cookies, rotating refresh tokens, and user-scoped saved locations. Unset `VITE_API_URL` to completely hide auth UI.
-- **Offline & Fallback Resilience**: Direct Open-Meteo geocoding fallback when backend is unavailable; manual GeoTIFF DEM file upload fallback when automated tile fetching is offline.
+- **Authentication & Saved Locations**: Email + password login with bcrypt (cost 12), JWT httpOnly cookies, and rotating refresh tokens. **Login is required** to use the app. After registering or signing in, locations can be saved to your account and recalled from the "My Locations" menu.
 - **Four Cohesive Viewports**: Seamless switching across Globe, 3D Map, Sky, and Shadows view modes with shared time and location state.
 
 ---
@@ -70,9 +69,9 @@ npm run dev
 
 The frontend will run at `http://localhost:5173`.
 
-### 2. Backend Setup (Optional)
+### 2. Backend Setup (Required)
 
-> **Note**: The backend is completely optional. If the backend is not running, the frontend gracefully falls back to client-side Open-Meteo geocoding.
+> **Login is required** to use the app. The backend must be running.
 
 ```bash
 cd backend
@@ -80,6 +79,7 @@ cd backend
 # Copy environment template
 cp .env.example .env
 # Configure PORT, DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+# Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET (each ≥ 32 chars)
 
 # Install dependencies
 npm install
@@ -87,6 +87,12 @@ npm install
 # Start backend server
 npm start
 ```
+
+#### Demo credentials
+
+Register any email/password via the sign-up tab on first run. There is no seeded demo account — create your own.
+
+> **Production note**: If frontend and backend are on different domains, set `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`, and `CLIENT_ORIGIN` to your frontend URL in the backend `.env`.
 
 Or start MySQL using Docker:
 
@@ -131,7 +137,7 @@ docker compose up -d
 
 - **Client-Centric Compute**: All solar geometry calculations, terrain tile fetching, and shadow raymarching run directly in the client browser.
 - **Unified Store**: `useHeliosStore` orchestrates view mode, date/time, solar angles, and coordinates across all three rendering runtimes (Cesium, Three.js, WebGPU).
-- **Graceful Degradation**: Location search queries backend first, then falls back seamlessly to Open-Meteo's public geocoding API if the backend is down.
+- **Auth-Gated App**: The app requires login. No Cesium tiles, WebGPU workers, or API calls are made until authentication is confirmed.
 
 ---
 
@@ -140,8 +146,8 @@ docker compose up -d
 - **Terrain-Only Shadows**: Shadow computation is performed exclusively on terrain elevation rasters. Building structures, vegetation canopy, and urban infrastructure shadows are not modeled.
 - **Approximate Raymarch**: Shadows are generated via raymarching over a discretized elevation grid with stepping increments; results are visual approximations designed for interactive exploration.
 - **WebGPU Dependency**: Shadows mode requires browser WebGPU support. On browsers lacking WebGPU, Globe, 3D Map, and Sky modes remain fully functional, while Shadows mode displays a fallback notice.
-- **Backend Optional**: Location persistence and custom terrain upload rely on the optional Node.js/MySQL backend; core simulation features require no backend connection.
-- **Authentication Scope (v1)**: Email verification, password reset, OAuth social logins, and refresh token rotation across multiple concurrent devices are out of scope for v1. Zero tokens are stored in `localStorage`. Cross-domain production hosting requires `SameSite=None; Secure`.
+- **Backend Required**: The backend (Node.js / MySQL) must be running. Login is enforced before any tiles, API calls, or GPU resources are loaded.
+- **Authentication Scope (v1)**: Email verification, password reset, OAuth social logins, and refresh token rotation across multiple concurrent devices are out of scope for v1. Zero tokens are stored in `localStorage`. Cross-domain production hosting requires `SameSite=None; Secure` and `COOKIE_SECURE=true`.
 
 ---
 
