@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { RotateCcw, Upload, AlertTriangle, Loader2 } from 'lucide-react';
+import { RotateCcw, Upload, Loader2 } from 'lucide-react';
 import { useHeliosStore } from '../store/useHeliosStore';
 import { getGpuDevice, ShadowGpuRenderer } from '../shadows/gpu';
 import { useDem } from '../shadows/useDem';
+import { createProceduralDem } from '../shadows/dem';
 import WebGPUUnsupported from '../components/WebGPUUnsupported';
 
 const radians = (degrees) => (degrees * Math.PI) / 180;
@@ -54,7 +55,7 @@ function getDayOfYear(value) {
 }
 
 // ── Optional manual upload overlay ─────────────────────────────────────────
-function ManualUploadFallback({ reason, onFile }) {
+function _ManualUploadFallback({ onFile }) {
   const [dragging, setDragging] = useState(false);
 
   const handleFiles = (files) => {
@@ -64,11 +65,6 @@ function ManualUploadFallback({ reason, onFile }) {
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-[#050a12]/95 backdrop-blur">
-      <div className="flex flex-col items-center gap-3 text-center max-w-xs">
-        <AlertTriangle size={32} className="text-amber-400" />
-        <p className="text-sm font-medium text-text-primary">Auto-fetch failed</p>
-        <p className="text-xs text-text-muted">{reason}</p>
-      </div>
       <label
         className={`flex flex-col items-center gap-3 w-56 rounded border-2 border-dashed p-8 cursor-pointer transition-colors ${dragging ? 'border-sun-glow bg-sun-glow/10' : 'border-line-active hover:border-sun-glow/60'}`}
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
@@ -92,7 +88,7 @@ function ManualUploadFallback({ reason, onFile }) {
 }
 
 // ── Loading indicator ───────────────────────────────────────────────────────
-function LoadingOverlay({ loaded, total }) {
+function _LoadingOverlay({ loaded, total }) {
   const pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#050a12]/80 backdrop-blur pointer-events-none">
@@ -128,8 +124,14 @@ export default function ShadowsView() {
   const [manualDem, setManualDem] = useState(null); // for optional .tif override
   const [camera, setCamera] = useState({ yaw: -0.75, pitch: 0.68, distance: 1.42 });
 
+  // ── Procedural DEM (instant fallback so the scene is never blank) ────────
+  const proceduralDem = useMemo(() => createProceduralDem(lat, lng), [lat, lng]);
+
   // ── DEM worker ─────────────────────────────────────────────────────────────
   const demStatus = useDem(lat, lng, viewMode === 'shadows');
+
+  // Active DEM: manual upload > real satellite DEM (when ready) > procedural fallback
+  const activeDem = manualDem ?? (demStatus.phase === 'ready' ? demStatus.dem : proceduralDem);
 
   // ── GPU init (once per canvas) ─────────────────────────────────────────────
   useEffect(() => {
@@ -160,14 +162,12 @@ export default function ShadowsView() {
     };
   }, [viewMode, gpuRenderer]);
 
-  // ── Feed DEM into GPU when worker delivers ─────────────────────────────────
+  // ── Feed DEM into GPU when activeDem or gpuReady changes ───────────────────
   useEffect(() => {
-    if (!gpuReady || !gpuRenderer) return;
-    const dem = manualDem ?? (demStatus.phase === 'ready' ? demStatus.dem : null);
-    if (!dem) return;
-    gpuRenderer.setDem(dem);
+    if (!gpuReady || !gpuRenderer || !activeDem) return;
+    gpuRenderer.setDem(activeDem);
     recomputeRef.current = true;
-  }, [gpuReady, gpuRenderer, demStatus, manualDem]);
+  }, [gpuReady, gpuRenderer, activeDem]);
 
   // ── Sun direction (memoised) ────────────────────────────────────────────────
   const sunDirection = useMemo(() => {
@@ -179,8 +179,6 @@ export default function ShadowsView() {
   useEffect(() => { recomputeRef.current = true; }, [sunDirection]);
 
   // ── Render loop ─────────────────────────────────────────────────────────────
-  const activeDem = manualDem ?? (demStatus.phase === 'ready' ? demStatus.dem : null);
-
   useEffect(() => {
     if (!gpuRenderer || !activeDem) return;
     const extent = activeDem.gridScale * 1024;
@@ -255,17 +253,16 @@ export default function ShadowsView() {
   const day = getDayOfYear(date);
 
   // Status line shown in the panel
-  let statusLine = 'Preparing…';
+  let statusLine = 'Terrain ready (procedural)';
   let cacheLabel = null;
   if (gpuError) statusLine = gpuError;
-  else if (demStatus.phase === 'loading') statusLine = `Fetching tiles (${demStatus.loaded}/${demStatus.total})`;
+  else if (demStatus.phase === 'loading') statusLine = `Fetching satellite tiles (${demStatus.loaded}/${demStatus.total})`;
   else if (demStatus.phase === 'ready') {
-    statusLine = `Terrain ready · ${demStatus.elapsedMs.toFixed(0)} ms`;
+    statusLine = `Satellite terrain ready · ${demStatus.elapsedMs.toFixed(0)} ms`;
     cacheLabel = demStatus.fromCache ? '⚡ from cache' : '🌐 live fetch';
   }
-  else if (demStatus.phase === 'error' && !manualDem) statusLine = demStatus.message;
+  else if (demStatus.phase === 'error' && !manualDem) statusLine = `Terrain ready · offline fallback`;
 
-  const showAutoFetchFailed = demStatus.phase === 'error' && !manualDem && !gpuError;
   const isLoading = demStatus.phase === 'loading';
 
   return (
@@ -283,12 +280,12 @@ export default function ShadowsView() {
         onWheel={zoom}
       />
 
-      {/* Loading overlay — non-blocking, UI underneath stays interactive */}
-      {isLoading && <LoadingOverlay loaded={demStatus.loaded} total={demStatus.total} />}
-
-      {/* Auto-fetch failure → show manual upload fallback */}
-      {showAutoFetchFailed && (
-        <ManualUploadFallback reason={demStatus.message} onFile={handleManualFile} />
+      {/* Non-blocking loading badge in corner */}
+      {isLoading && (
+        <div className="absolute left-6 bottom-8 flex items-center gap-2.5 px-3 py-2 rounded-md bg-[#050a12]/90 border border-line-active text-xs text-text-secondary shadow-lg backdrop-blur pointer-events-none">
+          <Loader2 size={16} className="animate-spin text-sun-glow" />
+          <span>Fetching satellite tiles ({demStatus.loaded}/{demStatus.total})…</span>
+        </div>
       )}
 
       {/* Info panel — sits below header, no SunData overlap in shadows mode */}

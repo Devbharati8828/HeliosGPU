@@ -18,6 +18,7 @@ const terrainRouter = require('./routes/v1/terrain');
 const earthRouter = require('./routes/v1/earth');
 const analysisRouter = require('./routes/v1/analysis');
 const authRouter = require('./routes/v1/auth');
+const demRouter = require('./routes/v1/dem');
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api/v1/solar', requireAuth, solarRouter);
 app.use('/api/v1/terrain', requireAuth, terrainRouter);
 app.use('/api/v1/earth', requireAuth, earthRouter);
 app.use('/api/v1/analysis', requireAuth, analysisRouter);
+app.use('/api/v1/dem', requireAuth, demRouter);
 
 // Health check (includes DB ping)
 app.get('/api/health', healthController.getHealth);

@@ -3,6 +3,7 @@ export const DEM_GRID_SIZE = 1024;
 const TILE_SIZE = 256;
 const TILE_GRID_SIZE = 4;
 const TERRARIUM_ROOT = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium';
+const PROXY_ROOT = '/api/v1/dem/tile';
 
 export type DemData = {
   data: Float32Array;
@@ -29,9 +30,12 @@ function wrapTileX(x: number, zoom: number) {
   return ((x % tileCount) + tileCount) % tileCount;
 }
 
-async function loadTile(url: string) {
-  const response = await fetch(url, { mode: 'cors' });
-  if (!response.ok) throw new Error(`Elevation tile request failed (${response.status}).`);
+async function loadTile(z: number, x: number, y: number) {
+  let response = await fetch(`${PROXY_ROOT}/${z}/${x}/${y}.png`, { credentials: 'include' });
+  if (!response.ok) {
+    response = await fetch(`${TERRARIUM_ROOT}/${z}/${x}/${y}.png`, { mode: 'cors' });
+    if (!response.ok) throw new Error(`Elevation tile request failed (${response.status}).`);
+  }
   return createImageBitmap(await response.blob(), { colorSpaceConversion: 'none' });
 }
 
@@ -56,8 +60,7 @@ export async function fetchDEM(lat = 30.1, lng = 78.29, signal?: AbortSignal): P
     for (let tileX = 0; tileX < TILE_GRID_SIZE; tileX += 1) {
       const x = wrapTileX(centerX - 1 + tileX, DEM_ZOOM);
       const y = centerY - 1 + tileY;
-      const url = `${TERRARIUM_ROOT}/${DEM_ZOOM}/${x}/${y}.png`;
-      tileRequests.push(loadTile(url).then((bitmap) => {
+      tileRequests.push(loadTile(DEM_ZOOM, x, y).then((bitmap) => {
         if (signal?.aborted) {
           bitmap.close();
           throw new DOMException('DEM request cancelled.', 'AbortError');
@@ -88,6 +91,43 @@ export async function fetchDEM(lat = 30.1, lng = 78.29, signal?: AbortSignal): P
     width: DEM_GRID_SIZE,
     height: DEM_GRID_SIZE,
     gridScale: 156543.03 * Math.cos((lat * Math.PI) / 180) / 2 ** DEM_ZOOM,
+    minHeight,
+    maxHeight,
+    centerLat: lat,
+    centerLng: lng,
+  };
+}
+
+/**
+ * Generates an instant synthetic mountain DEM so the 3D scene is never blank/black
+ * while satellite tiles are loading or if the tile service is unreachable.
+ */
+export function createProceduralDem(lat = 30.1, lng = 78.29): DemData {
+  const size = DEM_GRID_SIZE;
+  const data = new Float32Array(size * size);
+  let minHeight = Number.POSITIVE_INFINITY;
+  let maxHeight = Number.NEGATIVE_INFINITY;
+
+  for (let y = 0; y < size; y += 1) {
+    const ny = (y / size) * 8;
+    for (let x = 0; x < size; x += 1) {
+      const nx = (x / size) * 8;
+      const h = 2600 +
+        1300 * Math.sin(nx * 0.8 + Math.cos(ny * 0.7)) +
+        850 * Math.sin(nx * 1.7 - ny * 1.5) +
+        420 * Math.cos(nx * 3.3 + ny * 2.8) +
+        210 * Math.sin(nx * 6.5 - ny * 5.2);
+      data[y * size + x] = h;
+      if (h < minHeight) minHeight = h;
+      if (h > maxHeight) maxHeight = h;
+    }
+  }
+
+  return {
+    data,
+    width: size,
+    height: size,
+    gridScale: (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** DEM_ZOOM,
     minHeight,
     maxHeight,
     centerLat: lat,

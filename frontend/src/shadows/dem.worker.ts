@@ -18,6 +18,9 @@
  */
 
 const TERRARIUM_ROOT = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium';
+// Proxy path — backend forwards requests to S3, avoiding browser CORS restrictions.
+// Falls back to direct S3 if the proxy returns a non-OK status (e.g. dev without backend).
+const PROXY_ROOT = '/api/v1/dem/tile';
 const TILE_SIZE = 256;
 
 // ── Tile math ────────────────────────────────────────────────────────────────
@@ -77,9 +80,18 @@ async function fetchTileBlob(
     const cached = await readFromOpfs(opfsDir, key);
     if (cached) return cached;
   }
-  const url = `${TERRARIUM_ROOT}/${z}/${x}/${y}.png`;
-  const response = await fetch(url, { mode: 'cors' });
-  if (!response.ok) throw new Error(`Tile ${z}/${x}/${y} returned HTTP ${response.status}.`);
+
+  // Try backend proxy first (avoids CORS restrictions on the S3 bucket)
+  const proxyUrl = `${PROXY_ROOT}/${z}/${x}/${y}.png`;
+  let response = await fetch(proxyUrl, { credentials: 'include' });
+
+  // Fall back to direct S3 if proxy is unavailable (e.g. unauthenticated local dev)
+  if (!response.ok) {
+    const directUrl = `${TERRARIUM_ROOT}/${z}/${x}/${y}.png`;
+    response = await fetch(directUrl, { mode: 'cors' });
+    if (!response.ok) throw new Error(`Tile ${z}/${x}/${y} returned HTTP ${response.status}.`);
+  }
+
   const buffer = await response.arrayBuffer();
   if (opfsDir) writeToOpfs(opfsDir, key, buffer.slice(0)); // async, no await — fire-and-forget
   return buffer;

@@ -64,6 +64,7 @@ describe('11. Protected routes — 401 without auth cookie', () => {
     ['GET',  '/api/v1/solar/day?lat=51.5&lon=-0.1&date=2024-06-21&time=12:00'],
     ['GET',  '/api/v1/earth/imagery'],
     ['POST', '/api/v1/analysis'],
+    ['GET',  '/api/v1/dem/tile/12/3251/1570.png'],
   ];
 
   for (const [method, path] of protectedRoutes) {
