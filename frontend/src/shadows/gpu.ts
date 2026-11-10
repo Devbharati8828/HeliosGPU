@@ -188,6 +188,10 @@ export class ShadowGpuRenderer {
     this.device = device;
     this.context = canvas.getContext('webgpu') as GPUCanvasContext;
     if (!this.context) throw new Error('Unable to create a WebGPU canvas.');
+
+    device.onuncapturederror = (event) => {
+      console.error('[WebGPU UNCAPTURED ERROR]:', event.error.message);
+    };
     const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     this.context.configure({ device, format: canvasFormat, alphaMode: 'opaque' });
     this.elevationBuffer = device.createBuffer({ size: DEM_GRID_SIZE * DEM_GRID_SIZE * 4, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });

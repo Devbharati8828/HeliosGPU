@@ -118,7 +118,7 @@ export default function ShadowsView() {
   const canvasRef = useRef(null);
   const pointerRef = useRef(null);
   const recomputeRef = useRef(true);
-  const [gpuRenderer, setGpuRenderer] = useState(null);
+  const rendererRef = useRef(null);
   const [gpuReady, setGpuReady] = useState(false);
   const [gpuError, setGpuError] = useState('');
   const [manualDem, setManualDem] = useState(null); // for optional .tif override
@@ -133,11 +133,11 @@ export default function ShadowsView() {
   // Active DEM: manual upload > real satellite DEM (when ready) > procedural fallback
   const activeDem = manualDem ?? (demStatus.phase === 'ready' ? demStatus.dem : proceduralDem);
 
-  // ── GPU init (once per canvas) ─────────────────────────────────────────────
+  // ── GPU init (once per canvas mount) ───────────────────────────────────────
   useEffect(() => {
-    if (viewMode !== 'shadows' || !canvasRef.current || gpuRenderer) return;
+    if (viewMode !== 'shadows' || !canvasRef.current) return;
     let active = true;
-    let createdRenderer = null;
+
     (async () => {
       try {
         const device = await getGpuDevice();
@@ -145,29 +145,36 @@ export default function ShadowsView() {
           if (!device) setGpuError('WebGPU is not available in this browser.');
           return;
         }
-        createdRenderer = new ShadowGpuRenderer(device, canvasRef.current);
-        if (active) {
-          setGpuRenderer(createdRenderer);
-          setGpuReady(true);
-        } else {
-          createdRenderer.destroy();
+        if (!rendererRef.current) {
+          rendererRef.current = new ShadowGpuRenderer(device, canvasRef.current);
+          if (active) setGpuReady(true);
+          else {
+            rendererRef.current.destroy();
+            rendererRef.current = null;
+          }
         }
       } catch (err) {
         if (active) setGpuError(err.message || 'GPU initialization failed.');
       }
     })();
+
     return () => {
       active = false;
-      if (createdRenderer) createdRenderer.destroy();
+      if (rendererRef.current) {
+        rendererRef.current.destroy();
+        rendererRef.current = null;
+        setGpuReady(false);
+      }
     };
-  }, [viewMode, gpuRenderer]);
+  }, [viewMode]);
 
   // ── Feed DEM into GPU when activeDem or gpuReady changes ───────────────────
   useEffect(() => {
-    if (!gpuReady || !gpuRenderer || !activeDem) return;
-    gpuRenderer.setDem(activeDem);
+    const renderer = rendererRef.current;
+    if (!gpuReady || !renderer || !activeDem) return;
+    renderer.setDem(activeDem);
     recomputeRef.current = true;
-  }, [gpuReady, gpuRenderer, activeDem]);
+  }, [gpuReady, activeDem]);
 
   // ── Sun direction (memoised) ────────────────────────────────────────────────
   const sunDirection = useMemo(() => {
@@ -180,7 +187,8 @@ export default function ShadowsView() {
 
   // ── Render loop ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!gpuRenderer || !activeDem) return;
+    const renderer = rendererRef.current;
+    if (!gpuReady || !renderer || !activeDem) return;
     const extent = activeDem.gridScale * 1024;
     const horizontalDistance = extent * camera.distance;
     const eye = [
@@ -192,14 +200,14 @@ export default function ShadowsView() {
       perspectiveMatrix(radians(50), 1, extent * 0.015, extent * 8),
       lookAtMatrix(eye, [0, 0, 0])
     );
-    gpuRenderer.render(
+    renderer.render(
       sunDirection,
       viewProjection,
       recomputeRef.current,
       (ms) => setComputeTime(ms)
     );
     recomputeRef.current = false;
-  }, [gpuRenderer, activeDem, camera, sunDirection, setComputeTime]);
+  }, [gpuReady, activeDem, camera, sunDirection, setComputeTime]);
 
   // ── Manual .tif upload handler ─────────────────────────────────────────────
   const handleManualFile = async (file) => {
